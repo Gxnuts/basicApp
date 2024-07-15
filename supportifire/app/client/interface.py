@@ -160,7 +160,7 @@ class App(customtkinter.CTk):
             "How to upload a file?": "To upload a file, click on the 'Upload' button in the sidebar and select the file you want to upload.",
             "How to download a file?": "To download a file, click on the 'Download' button in the sidebar and select the file you want to download.",
             "How to delete a file?": "To delete a file, select the file and click on the 'Delete' button. The file will be moved to the recycle bin.",
-            "How to restore a file from recycle bin?": "To restore a file from the recycle bin, click on the 'Recycle Bin' button in the sidebar, select the file, and click 'Restore'.",
+            "How to restore a file from bin?": "To restore a file from the recycle bin, click on the 'Recycle Bin' button in the sidebar, select the file, and click 'Restore'.",
             "How to change language?": "To change the language, click on the 'Language' button in the sidebar. This will toggle between English and Vietnamese.",
             "How to change appearance mode?": "To change the appearance mode, select the desired mode from the 'Appearance Mode' dropdown in the sidebar.",
             "How to change scaling?": "To change the UI scaling, select the desired scaling from the 'UI Scaling' dropdown in the sidebar.",

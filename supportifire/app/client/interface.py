@@ -69,7 +69,7 @@ class App(customtkinter.CTk):
         self.textbox.insert("0.0", "Process Activity Log :\n\n" + "Log-Message \"Application started\"\n" + "Log-Message \"User logged in\"\n" + "Log-Message \"Data updated\"\n\n" + "This screen will show the activities you perform in this application. That processes will be shown below...\n\n")
 
         # create clock and calendar by tabview
-        self.tabview = customtkinter.CTkTabview(self, width=250)
+        self.tabview = customtkinter.CTkTabview(self, width=0)
         self.tabview.grid(row=0, column=2, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.tabview.add("Time by hours")
         self.tabview.add("Time by dates")
@@ -94,25 +94,22 @@ class App(customtkinter.CTk):
         # create notification frame
         self.radiobutton_frame = customtkinter.CTkFrame(self)
         self.radiobutton_frame.grid(row=0, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
-        self.radiobutton_frame.grid_columnconfigure(0, weight=1)  # Adjusted to center-align content
+        self.radiobutton_frame.grid_columnconfigure(0, weight=1)  
 
         self.label_radio_group = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Notification", font=customtkinter.CTkFont(size=16, weight="bold"))
         self.label_radio_group.grid(row=0, column=0, pady=(10, 0), padx=20, sticky="n")
         
-        self.radio_1 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Application started : Successful")
+        self.radio_1 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Application started")
         self.radio_1.grid(row=1, column=0, pady=5, padx=20, sticky="n")
         
-        self.radio_2 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="User logged in : Successful")
+        self.radio_2 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="User logged in")
         self.radio_2.grid(row=2, column=0, pady=5, padx=20, sticky="n")
         
-        self.radio_3 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Data updated : Successful")
+        self.radio_3 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Data updated")
         self.radio_3.grid(row=3, column=0, pady=5, padx=20, sticky="n")
         
-        self.radio_4 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="All processes successfully.")
+        self.radio_4 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="All processes successfully")
         self.radio_4.grid(row=4, column=0, pady=5, padx=20, sticky="n")
-        
-        self.name_notification = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Welcome to Application.\nHope you have a good experience!")
-        self.name_notification.grid(row=5, column=0, pady=5, padx=20, sticky="n")
 
         self.radio_var = tkinter.IntVar(value=0)
 
@@ -148,11 +145,11 @@ class App(customtkinter.CTk):
             "How to upload a file?",
             "How to download a file?",
             "How to delete a file?",
-            "How to restore a file from bin?",
-            "How to change language?",
-            "How to change appearance mode?",
-            "How to change scaling?",
             "How to search by file URL?",
+            "How to change scaling?",
+            "How to change language?",
+            "How to restore a file?",
+            "How to change appearance mode?",
             "How to starred a file?"
         ]
 
@@ -160,11 +157,11 @@ class App(customtkinter.CTk):
             "How to upload a file?": "To upload a file, click on the 'Upload' button in the sidebar and select the file you want to upload.",
             "How to download a file?": "To download a file, click on the 'Download' button in the sidebar and select the file you want to download.",
             "How to delete a file?": "To delete a file, select the file and click on the 'Delete' button. The file will be moved to the recycle bin.",
-            "How to restore a file from bin?": "To restore a file from the recycle bin, click on the 'Recycle Bin' button in the sidebar, select the file, and click 'Restore'.",
-            "How to change language?": "To change the language, click on the 'Language' button in the sidebar. This will toggle between English and Vietnamese.",
-            "How to change appearance mode?": "To change the appearance mode, select the desired mode from the 'Appearance Mode' dropdown in the sidebar.",
-            "How to change scaling?": "To change the UI scaling, select the desired scaling from the 'UI Scaling' dropdown in the sidebar.",
             "How to search by file URL?": "To search by file URL, enter the URL in the search box and click the 'Search' button.",
+            "How to change scaling?": "To change the UI scaling, select the desired scaling from the 'UI Scaling' dropdown in the sidebar.",
+            "How to change language?": "To change the language, click on the 'Language' button in the sidebar. This will toggle between English and Vietnamese.",            
+            "How to restore a file?": "To restore a file from the recycle bin, click on the 'Recycle Bin' button in the sidebar, select the file, and click 'Restore'.",
+            "How to change appearance mode?": "To change the appearance mode, select the desired mode from the 'Appearance Mode' dropdown in the sidebar.",
             "How to starred a file?": "To starred a file, click on the 'Starred File' button in the sidebar. This will mark the file as starred."
         }
 
@@ -188,7 +185,7 @@ class App(customtkinter.CTk):
         self.phone_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Phone : +123456789")
         self.phone_label.grid(row=3, column=0, pady=5, padx=20, sticky="n")
 
-        self.address_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Address : 227 Nguyen Van Cu\nWard 4, District 5, Ho Chi Minh City")
+        self.address_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Address : 227 Nguyen Van Cu\nWard 4, District 5\nHo Chi Minh City, Viet Nam")
         self.address_label.grid(row=4, column=0, pady=5, padx=20, sticky="n")
 
     # create a function to log activities
@@ -243,11 +240,6 @@ class App(customtkinter.CTk):
             self.upload_file_button.configure(text="Tất cả tệp trên máy chủ")
             self.upload_folder_button.configure(text="Tệp được đánh dấu")
             self.label_radio_group.configure(text="Thông báo")
-            self.radio_1.configure(text="Application started : Thành công")
-            self.radio_2.configure(text="User logged in : Thành công")
-            self.radio_3.configure(text="Data updated : Thành công")
-            self.radio_4.configure(text="Tất cả quy trình đã thành công.")
-            self.name_notification.configure(text="Mừng bạn đến với ứng dụng.\nMong bạn có một trải nghiệm tốt!")
             self.contact_label.configure(text="Liên hệ với chúng tôi")
             self.entry.configure(placeholder_text="Nhập URL của tệp")
             self.main_button_1.configure(text="Tìm kiếm")
@@ -266,11 +258,6 @@ class App(customtkinter.CTk):
             self.upload_file_button.configure(text="All Server File")
             self.upload_folder_button.configure(text="Starred File")
             self.label_radio_group.configure(text="Notification")
-            self.radio_1.configure(text="Application started : Successful")
-            self.radio_2.configure(text="User logged in : Successful")
-            self.radio_3.configure(text="Data updated : Successful")
-            self.radio_4.configure(text="All processes successfully.")
-            self.name_notification.configure(text="Welcome to Application.\nHope you have a good experience!")
             self.contact_label.configure(text="Contact Us")
             self.entry.configure(placeholder_text="Enter URL of File")
             self.main_button_1.configure(text="Search")

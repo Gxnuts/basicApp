@@ -143,7 +143,7 @@ class App(customtkinter.CTk):
         self.radiobutton_frame.grid(row=0, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
         self.radiobutton_frame.grid_columnconfigure(0, weight=1)  
 
-        self.label_radio_group = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Notification", font=customtkinter.CTkFont(size=16, weight="bold"))
+        self.label_radio_group = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Notification", font=customtkinter.CTkFont(size=15, weight="bold"))
         self.label_radio_group.grid(row=0, column=0, pady=(10, 0), padx=20, sticky="n")
         
         self.radio_1 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Application started")
@@ -220,7 +220,7 @@ class App(customtkinter.CTk):
         self.contact_us_frame = customtkinter.CTkFrame(self.main_frame)
         self.contact_us_frame.grid(row=1, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
 
-        self.contact_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Contact Us", font=customtkinter.CTkFont(size=16, weight="bold"))
+        self.contact_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Contact Us", font=customtkinter.CTkFont(size=15, weight="bold"))
         self.contact_label.grid(row=0, column=0, pady=10, padx=20, sticky="n")
 
         self.name_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Team : Your Team")

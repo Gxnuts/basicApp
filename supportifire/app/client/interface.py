@@ -1,7 +1,6 @@
 import tkinter
-import tkinter.messagebox
 import customtkinter
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 import os
 import time
 
@@ -12,20 +11,68 @@ customtkinter.set_widget_scaling(1.0)  # Set UI scaling to 100% by default
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
+        
+        # initialize user data
+        self.users = {"admin": "admin"}  
+        self.current_user = None
 
+        # deleted files list
         self.deleted_files = []
 
         # configure window
         self.title("Upload and Download File")
         self.geometry(f"{1100}x{620}")
+        
+        # create login frame
+        self.login_frame = customtkinter.CTkFrame(self, width=400, height=300, corner_radius=0)
+        self.login_frame.place(relx=0.5, rely=0.5, anchor="center")
 
+        self.login_label = customtkinter.CTkLabel(self.login_frame, text="Login", font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.login_label.grid(row=0, column=0, padx=20, pady=(20, 10), columnspan=2)
+
+        self.username_entry = customtkinter.CTkEntry(self.login_frame, placeholder_text="Username")
+        self.username_entry.grid(row=1, column=0, padx=20, pady=10, columnspan=2)
+
+        self.password_entry = customtkinter.CTkEntry(self.login_frame, placeholder_text="Password", show="*")
+        self.password_entry.grid(row=2, column=0, padx=20, pady=10, columnspan=2)
+
+        self.login_button = customtkinter.CTkButton(self.login_frame, text="Login", command=self.login)
+        self.login_button.grid(row=3, column=0, padx=20, pady=10)
+
+        self.register_button = customtkinter.CTkButton(self.login_frame, text="Register", command=self.show_register_frame)
+        self.register_button.grid(row=3, column=1, padx=20, pady=10)
+
+        # create register frame
+        self.register_frame = customtkinter.CTkFrame(self, width=400, height=300, corner_radius=0)
+
+        self.register_label = customtkinter.CTkLabel(self.register_frame, text="Register", font=customtkinter.CTkFont(size=20, weight="bold"))
+        self.register_label.grid(row=0, column=0, padx=20, pady=(20, 10), columnspan=2)
+
+        self.new_username_entry = customtkinter.CTkEntry(self.register_frame, placeholder_text="Username")
+        self.new_username_entry.grid(row=1, column=0, padx=20, pady=10, columnspan=2)
+
+        self.new_password_entry = customtkinter.CTkEntry(self.register_frame, placeholder_text="Password", show="*")
+        self.new_password_entry.grid(row=2, column=0, padx=20, pady=10, columnspan=2)
+
+        self.confirm_password_entry = customtkinter.CTkEntry(self.register_frame, placeholder_text="Confirm Password", show="*")
+        self.confirm_password_entry.grid(row=3, column=0, padx=20, pady=10, columnspan=2)
+
+        self.create_account_button = customtkinter.CTkButton(self.register_frame, text="Create Account", command=self.register)
+        self.create_account_button.grid(row=4, column=0, padx=20, pady=10)
+
+        self.back_to_login_button = customtkinter.CTkButton(self.register_frame, text="Back to Login", command=self.show_login_frame)
+        self.back_to_login_button.grid(row=4, column=1, padx=20, pady=10)
+
+        # create main frame for file manager
+        self.main_frame = customtkinter.CTkFrame(self, fg_color="transparent")
+        
         # configure grid layout (4x4)
-        self.grid_columnconfigure(1, weight=1)
-        self.grid_columnconfigure((2, 3), weight=0)
-        self.grid_rowconfigure((0, 1, 2), weight=1)
-
+        self.main_frame.grid_columnconfigure(1, weight=1)
+        self.main_frame.grid_columnconfigure((2, 3), weight=0)
+        self.main_frame.grid_rowconfigure((0, 1, 2), weight=1)
+        
         # create sidebar frame with widgets
-        self.sidebar_frame = customtkinter.CTkFrame(self, width=140, corner_radius=0)
+        self.sidebar_frame = customtkinter.CTkFrame(self.main_frame, width=140, corner_radius=0)
         self.sidebar_frame.grid(row=0, column=0, rowspan=4, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(5, weight=1)
 
@@ -57,19 +104,19 @@ class App(customtkinter.CTk):
         self.scaling_optionemenu.grid(row=9, column=0, padx=20, pady=(10, 20))
 
         # create main entry and button
-        self.entry = customtkinter.CTkEntry(self, placeholder_text="Enter URL of File")
+        self.entry = customtkinter.CTkEntry(self.main_frame, placeholder_text="Enter URL of File")
         self.entry.grid(row=3, column=1, columnspan=2, padx=(20, 0), pady=(20, 20), sticky="nsew")
 
-        self.main_button_1 = customtkinter.CTkButton(master=self, text="Search", border_width=2)
+        self.main_button_1 = customtkinter.CTkButton(master=self.main_frame, text="Search", border_width=2)
         self.main_button_1.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
         # create textbox
-        self.textbox = customtkinter.CTkTextbox(self, width=250)
+        self.textbox = customtkinter.CTkTextbox(self.main_frame, width=250)
         self.textbox.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.textbox.insert("0.0", "Process Activity Log :\n\n" + "Log-Message \"Application started\"\n" + "Log-Message \"User logged in\"\n" + "Log-Message \"Data updated\"\n\n" + "This screen will show the activities you perform in this application. That processes will be shown below...\n\n")
 
         # create clock and calendar by tabview
-        self.tabview = customtkinter.CTkTabview(self, width=0)
+        self.tabview = customtkinter.CTkTabview(self.main_frame, width=0)
         self.tabview.grid(row=0, column=2, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.tabview.add("Time by hours")
         self.tabview.add("Time by dates")
@@ -92,7 +139,7 @@ class App(customtkinter.CTk):
         self.update_date_month()
 
         # create notification frame
-        self.radiobutton_frame = customtkinter.CTkFrame(self)
+        self.radiobutton_frame = customtkinter.CTkFrame(self.main_frame)
         self.radiobutton_frame.grid(row=0, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
         self.radiobutton_frame.grid_columnconfigure(0, weight=1)  
 
@@ -114,7 +161,7 @@ class App(customtkinter.CTk):
         self.radio_var = tkinter.IntVar(value=0)
 
         # create slider and progressbar frame
-        self.slider_progressbar_frame = customtkinter.CTkFrame(self, fg_color="transparent")
+        self.slider_progressbar_frame = customtkinter.CTkFrame(self.main_frame, fg_color="transparent")
         self.slider_progressbar_frame.grid(row=1, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.slider_progressbar_frame.grid_columnconfigure(0, weight=1)
         self.slider_progressbar_frame.grid_rowconfigure(4, weight=1)
@@ -137,7 +184,7 @@ class App(customtkinter.CTk):
         self.progressbar_3.grid(row=0, column=2, rowspan=5, padx=(10, 20), pady=(10, 10), sticky="ns")
 
         # create help frame with FAQ
-        self.help_frame = customtkinter.CTkScrollableFrame(self, label_text="Help - FAQ")
+        self.help_frame = customtkinter.CTkScrollableFrame(self.main_frame, label_text="Help - FAQ")
         self.help_frame.grid(row=1, column=2, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.help_frame.grid_columnconfigure(0, weight=1)
 
@@ -170,7 +217,7 @@ class App(customtkinter.CTk):
             button.pack(pady=5, padx=10)
 
         # create contact us frame
-        self.contact_us_frame = customtkinter.CTkFrame(self)
+        self.contact_us_frame = customtkinter.CTkFrame(self.main_frame)
         self.contact_us_frame.grid(row=1, column=3, padx=(20, 20), pady=(20, 0), sticky="nsew")
 
         self.contact_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Contact Us", font=customtkinter.CTkFont(size=16, weight="bold"))
@@ -187,6 +234,46 @@ class App(customtkinter.CTk):
 
         self.address_label = customtkinter.CTkLabel(master=self.contact_us_frame, text="Address : 227 Nguyen Van Cu\nWard 4, District 5\nHo Chi Minh City, Viet Nam")
         self.address_label.grid(row=4, column=0, pady=5, padx=20, sticky="n")
+        
+    # create a function to show login frame
+    def show_login_frame(self):
+        self.register_frame.place_forget()
+        self.login_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+    # create a function to show register frame
+    def show_register_frame(self):
+        self.login_frame.place_forget()
+        self.register_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+    # create a function to open folder manager
+    def login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        if username in self.users and self.users[username] == password:
+            self.current_user = username
+            self.login_frame.place_forget()
+            self.main_frame.grid(row=0, column=0, sticky="nsew")
+            self.grid_rowconfigure(0, weight=1)
+            self.grid_columnconfigure(0, weight=1)
+            self.textbox.insert("end", f"Welcome, {username}!\n")
+        else:
+            messagebox.showerror("Login Failed", "Invalid username or password")
+
+    # create a function to register
+    def register(self):
+        username = self.new_username_entry.get()
+        password = self.new_password_entry.get()
+        confirm_password = self.confirm_password_entry.get()
+
+        if username in self.users:
+            messagebox.showerror("Registration Failed", "Username already exists")
+        elif password != confirm_password:
+            messagebox.showerror("Registration Failed", "Passwords do not match")
+        else:
+            self.users[username] = password
+            messagebox.showinfo("Registration Successful", "Account created successfully")
+            self.show_login_frame()
 
     # create a function to log activities
     def log_activity(self, message):

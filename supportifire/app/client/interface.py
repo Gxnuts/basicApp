@@ -1,6 +1,7 @@
 import tkinter
 import customtkinter
 from tkinter import filedialog, messagebox
+from PIL import ImageTk, Image
 import os
 import time
 
@@ -11,7 +12,7 @@ customtkinter.set_widget_scaling(1.0)  # Set UI scaling to 100% by default
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-        
+     
         # initialize user data
         self.users = {"admin": "admin"}  
         self.current_user = None
@@ -20,11 +21,22 @@ class App(customtkinter.CTk):
         self.deleted_files = []
 
         # configure window
-        self.title("Upload and Download File")
-        self.geometry(f"{1100}x{620}")
+        self.title("CloudBox")
+        self.geometry(f"{1175}x{660}")
+        
+        # import image
+        image_bg = ImageTk.PhotoImage(Image.open("file_path/image/background_frame.jpg"))
+        
+        # create background frame
+        self.background_frame = customtkinter.CTkFrame(self, width=1100, height=620)
+        self.background_frame.pack(fill="both", expand=True)
+        
+        # create background label
+        self.background_label = customtkinter.CTkLabel(master=self.background_frame, image=image_bg)
+        self.background_label.pack(fill="both", expand=True)        
         
         # create login frame
-        self.login_frame = customtkinter.CTkFrame(self, width=400, height=300, corner_radius=0)
+        self.login_frame = customtkinter.CTkFrame(master=self.background_label, width=400, height=300, corner_radius=0, fg_color="Snow")
         self.login_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         self.login_label = customtkinter.CTkLabel(self.login_frame, text="Login", font=customtkinter.CTkFont(size=20, weight="bold"))
@@ -43,7 +55,7 @@ class App(customtkinter.CTk):
         self.register_button.grid(row=3, column=1, padx=20, pady=10)
 
         # create register frame
-        self.register_frame = customtkinter.CTkFrame(self, width=400, height=300, corner_radius=0)
+        self.register_frame = customtkinter.CTkFrame(master=self.background_label, width=400, height=300, corner_radius=0, fg_color="Snow")
 
         self.register_label = customtkinter.CTkLabel(self.register_frame, text="Register", font=customtkinter.CTkFont(size=20, weight="bold"))
         self.register_label.grid(row=0, column=0, padx=20, pady=(20, 10), columnspan=2)
@@ -253,6 +265,7 @@ class App(customtkinter.CTk):
         if username in self.users and self.users[username] == password:
             self.current_user = username
             self.login_frame.place_forget()
+            self.background_frame.pack_forget()
             self.main_frame.grid(row=0, column=0, sticky="nsew")
             self.grid_rowconfigure(0, weight=1)
             self.grid_columnconfigure(0, weight=1)

@@ -48,10 +48,10 @@ class App(customtkinter.CTk):
         self.password_entry = customtkinter.CTkEntry(self.login_frame, placeholder_text="Password", show="*")
         self.password_entry.grid(row=2, column=0, padx=20, pady=10, columnspan=2)
 
-        self.login_button = customtkinter.CTkButton(self.login_frame, text="Login", command=self.login)
+        self.login_button = customtkinter.CTkButton(self.login_frame, text="Login", command=self.login, fg_color="SlateBlue", hover_color="MediumSlateBlue")
         self.login_button.grid(row=3, column=0, padx=20, pady=10)
 
-        self.register_button = customtkinter.CTkButton(self.login_frame, text="Register", command=self.show_register_frame)
+        self.register_button = customtkinter.CTkButton(self.login_frame, text="Register", command=self.show_register_frame, fg_color="SlateBlue", hover_color="MediumSlateBlue")
         self.register_button.grid(row=3, column=1, padx=20, pady=10)
 
         # create register frame
@@ -69,10 +69,10 @@ class App(customtkinter.CTk):
         self.confirm_password_entry = customtkinter.CTkEntry(self.register_frame, placeholder_text="Confirm Password", show="*")
         self.confirm_password_entry.grid(row=3, column=0, padx=20, pady=10, columnspan=2)
 
-        self.create_account_button = customtkinter.CTkButton(self.register_frame, text="Create Account", command=self.register)
+        self.create_account_button = customtkinter.CTkButton(self.register_frame, text="Create Account", command=self.register, fg_color="SlateBlue", hover_color="MediumSlateBlue")
         self.create_account_button.grid(row=4, column=0, padx=20, pady=10)
 
-        self.back_to_login_button = customtkinter.CTkButton(self.register_frame, text="Back to Login", command=self.show_login_frame)
+        self.back_to_login_button = customtkinter.CTkButton(self.register_frame, text="Back to Login", command=self.show_login_frame, fg_color="SlateBlue", hover_color="MediumSlateBlue")
         self.back_to_login_button.grid(row=4, column=1, padx=20, pady=10)
 
         # create main frame for file manager

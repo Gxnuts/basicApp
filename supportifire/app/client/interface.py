@@ -12,20 +12,29 @@ customtkinter.set_widget_scaling(1.0)  # Set UI scaling to 100% by default
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
-     
-        # initialize user data
-        self.users = {"admin": "admin"}  
+             
+        # initialize user login data
+        self.users_login = {"admin": "admin"}
         self.current_user = None
-
-        # deleted files list
+        
+        # initialize all server files data
+        self.all_server_files = []
+        
+        # initialize starred files data
+        self.starred_files = []
+        
+        # initialize deleted files data
         self.deleted_files = []
+        
+        # initialize user file data
+        self.user_files = {}
 
         # configure window
         self.title("CloudBox")
         self.geometry(f"{1175}x{660}")
         
         # import image
-        image_bg = ImageTk.PhotoImage(Image.open("file_path/image/background_frame.jpg"))
+        image_bg = ImageTk.PhotoImage(Image.open("path/image/background_frame.jpg"))
         
         # create background frame
         self.background_frame = customtkinter.CTkFrame(self, width=1100, height=620)
@@ -94,7 +103,7 @@ class App(customtkinter.CTk):
         self.sidebar_button_1 = customtkinter.CTkButton(self.sidebar_frame, text="Upload", command=self.upload_file)
         self.sidebar_button_1.grid(row=1, column=0, padx=20, pady=10)
         
-        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="Download", command=self.download_file)
+        self.sidebar_button_2 = customtkinter.CTkButton(self.sidebar_frame, text="My Storage", command=self.open_my_storage)
         self.sidebar_button_2.grid(row=2, column=0, padx=20, pady=10)
         
         self.sidebar_button_3 = customtkinter.CTkButton(self.sidebar_frame, text="Recycle Bin", command=self.open_trash_bin)
@@ -119,7 +128,7 @@ class App(customtkinter.CTk):
         self.entry = customtkinter.CTkEntry(self.main_frame, placeholder_text="Enter URL of File")
         self.entry.grid(row=3, column=1, columnspan=2, padx=(20, 0), pady=(20, 20), sticky="nsew")
 
-        self.main_button_1 = customtkinter.CTkButton(master=self.main_frame, text="Search", border_width=2)
+        self.main_button_1 = customtkinter.CTkButton(master=self.main_frame, text="Search", border_width=2, command=self.upload_file_by_path)
         self.main_button_1.grid(row=3, column=3, padx=(20, 20), pady=(20, 20), sticky="nsew")
 
         # create textbox
@@ -135,6 +144,7 @@ class App(customtkinter.CTk):
         self.tabview.tab("Time by hours").grid_columnconfigure(0, weight=1)  
         self.tabview.tab("Time by dates").grid_columnconfigure(0, weight=1)
 
+        # create labels to notify time by hours and time by dates
         self.label_tab_1 = customtkinter.CTkButton(self.tabview.tab("Time by hours"), text="Hours : Minutes")
         self.label_tab_1.grid(row=2, column=0, padx=20, pady=(20, 20))
         self.label_tab_2 = customtkinter.CTkButton(self.tabview.tab("Time by dates"), text="Dates - Months")
@@ -172,28 +182,30 @@ class App(customtkinter.CTk):
 
         self.radio_var = tkinter.IntVar(value=0)
 
-        # create slider and progressbar frame
+        # create buttons, slider and progressbar frame
         self.slider_progressbar_frame = customtkinter.CTkFrame(self.main_frame, fg_color="transparent")
         self.slider_progressbar_frame.grid(row=1, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
         self.slider_progressbar_frame.grid_columnconfigure(0, weight=1)
         self.slider_progressbar_frame.grid_rowconfigure(4, weight=1)
         
-        self.upload_file_button = customtkinter.CTkButton(self.slider_progressbar_frame, text="All Server File", command=self.upload_folder)
-        self.upload_file_button.grid(row=0, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")
-        self.upload_folder_button = customtkinter.CTkButton(self.slider_progressbar_frame, text="Starred File", command=self.upload_folder)
-        self.upload_folder_button.grid(row=1, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")        
+        # create buttons of all server file and starred file
+        self.open_asf = customtkinter.CTkButton(self.slider_progressbar_frame, text="All Server File", command=self.open_all_server_file)
+        self.open_asf.grid(row=0, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")
+        self.open_sf = customtkinter.CTkButton(self.slider_progressbar_frame, text="Starred File", command=self.open_starred_file)
+        self.open_sf.grid(row=1, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")          
         
-        self.progressbar_1 = customtkinter.CTkProgressBar(self.slider_progressbar_frame)
-        self.progressbar_1.grid(row=2, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")
+        # create progressbars and sliders
         self.progressbar_2 = customtkinter.CTkProgressBar(self.slider_progressbar_frame)
-        self.progressbar_2.grid(row=3, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")
-        
-        self.slider_1 = customtkinter.CTkSlider(self.slider_progressbar_frame, from_=0, to=1, number_of_steps=3)
+        self.progressbar_2.grid(row=2, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")
+        self.slider_1 = customtkinter.CTkSlider(self.slider_progressbar_frame, from_=0, to=1, number_of_steps=4)
         self.slider_1.grid(row=3, column=0, padx=(20, 10), pady=(10, 10), sticky="ew")
         self.slider_2 = customtkinter.CTkSlider(self.slider_progressbar_frame, orientation="vertical")
         self.slider_2.grid(row=0, column=1, rowspan=5, padx=(10, 10), pady=(10, 10), sticky="ns")
         self.progressbar_3 = customtkinter.CTkProgressBar(self.slider_progressbar_frame, orientation="vertical")
         self.progressbar_3.grid(row=0, column=2, rowspan=5, padx=(10, 20), pady=(10, 10), sticky="ns")
+
+        self.slider_1.configure(command=self.progressbar_2.set)
+        self.slider_2.configure(command=self.progressbar_3.set)
 
         # create help frame with FAQ
         self.help_frame = customtkinter.CTkScrollableFrame(self.main_frame, label_text="Help - FAQ")
@@ -262,7 +274,7 @@ class App(customtkinter.CTk):
         username = self.username_entry.get()
         password = self.password_entry.get()
 
-        if username in self.users and self.users[username] == password:
+        if username in self.users_login and self.users_login[username] == password:
             self.current_user = username
             self.login_frame.place_forget()
             self.background_frame.pack_forget()
@@ -279,12 +291,12 @@ class App(customtkinter.CTk):
         password = self.new_password_entry.get()
         confirm_password = self.confirm_password_entry.get()
 
-        if username in self.users:
+        if username in self.users_login:
             messagebox.showerror("Registration Failed", "Username already exists")
         elif password != confirm_password:
             messagebox.showerror("Registration Failed", "Passwords do not match")
         else:
-            self.users[username] = password
+            self.users_login[username] = password
             messagebox.showinfo("Registration Successful", "Account created successfully")
             self.show_login_frame()
 
@@ -330,15 +342,15 @@ class App(customtkinter.CTk):
             self.logo_label.configure(text="Quản lý Tệp")
             self.language_button.configure(text="Tiếng Việt")
             self.sidebar_button_1.configure(text="Tải lên")
-            self.sidebar_button_2.configure(text="Tải xuống")
+            self.sidebar_button_2.configure(text="Tệp cá nhân")
             self.sidebar_button_3.configure(text="Thùng rác")
             self.appearance_mode_label.configure(text="Chế độ giao diện:")
             self.scaling_label.configure(text="Tỷ lệ giao diện:")
             self.label_tab_1.configure(text="Giờ : Phút")
             self.label_tab_2.configure(text="Ngày - Tháng")
             self.help_frame.configure(label_text="Trợ giúp - Câu hỏi thường gặp")
-            self.upload_file_button.configure(text="Tất cả tệp trên máy chủ")
-            self.upload_folder_button.configure(text="Tệp được đánh dấu")
+            self.open_asf.configure(text="Tất cả tệp trên máy chủ")
+            self.open_sf.configure(text="Tệp được đánh dấu")
             self.label_radio_group.configure(text="Thông báo")
             self.contact_label.configure(text="Liên hệ với chúng tôi")
             self.entry.configure(placeholder_text="Nhập URL của tệp")
@@ -348,15 +360,15 @@ class App(customtkinter.CTk):
             self.logo_label.configure(text="File Manager")
             self.language_button.configure(text="English")
             self.sidebar_button_1.configure(text="Upload")
-            self.sidebar_button_2.configure(text="Download")
+            self.sidebar_button_2.configure(text="My Storage")
             self.sidebar_button_3.configure(text="Recycle Bin")
             self.appearance_mode_label.configure(text="Appearance Mode:")
             self.scaling_label.configure(text="UI Scaling:")
             self.label_tab_1.configure(text="Hours : Minutes")
             self.label_tab_2.configure(text="Dates - Months")
             self.help_frame.configure(label_text="Help - FAQ")
-            self.upload_file_button.configure(text="All Server File")
-            self.upload_folder_button.configure(text="Starred File")
+            self.open_asf.configure(text="All Server File")
+            self.open_sf.configure(text="Starred File")
             self.label_radio_group.configure(text="Notification")
             self.contact_label.configure(text="Contact Us")
             self.entry.configure(placeholder_text="Enter URL of File")
@@ -380,33 +392,142 @@ class App(customtkinter.CTk):
                     with open(destination, 'wb') as dest_file:
                         dest_file.write(src_file.read())
                 self.log_activity(f"Downloaded file: {file_path} to {download_location}")
+                
+    # upload file by path
+    def upload_file_by_path(self):
+        file_path = self.entry.get()
+        if os.path.isfile(file_path):
+            self.log_activity(f"Uploaded file: {file_path}")
+        else:
+            self.log_activity("Invalid file path")
 
+    # open my storage function
+    def open_my_storage(self):
+        self.log_activity("Opened My Storage.")
+        my_storage_window = customtkinter.CTkToplevel(self)
+        my_storage_window.title("My Storage")
+        my_storage_window.geometry(f"{420}x{300}")
+        my_storage_window.attributes('-topmost', True)
+        my_storage_window.resizable(False, False)
+        
+        # configure grid layout (3x2)
+        my_storage_window.grid_columnconfigure(1, weight=1)
+        my_storage_window.grid_columnconfigure((0, 2, 3), weight=0)
+        my_storage_window.grid_rowconfigure((0, 1), weight=1)
+        my_storage_window.grid_rowconfigure(2, weight=0)
+
+        # create scrollable frame
+        my_storage_window.scrollable_frame = customtkinter.CTkScrollableFrame(my_storage_window, label_text="My Storage", height=650)
+        my_storage_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
+        my_storage_window.scrollable_frame.grid_columnconfigure(0, weight=1)
+        my_storage_window.scrollable_frame_checkboxes = []
+        for i in range(1100,1357):
+            checkbox = customtkinter.CTkCheckBox(master=my_storage_window.scrollable_frame, text=f"{i} - filelength.txt - Quang Minh - 2021-07-01", width=100)
+            checkbox.grid(row=i, column=0, padx=10, pady=(0, 20))
+            my_storage_window.scrollable_frame_checkboxes.append(checkbox)
+
+        # create additional buttons in the top-right corner
+        my_storage_window.button_1 = customtkinter.CTkButton(my_storage_window, text="Download", width=180)
+        my_storage_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
+
+        my_storage_window.button_2 = customtkinter.CTkButton(my_storage_window, text="Delete", width=180)
+        my_storage_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")
+    
     # open trash bin function
     def open_trash_bin(self):
+        self.log_activity("Opened Recycle Bin.")
         trash_bin_window = customtkinter.CTkToplevel(self)
         trash_bin_window.title("Recycle Bin")
-        trash_bin_window.geometry("400x300")
+        trash_bin_window.geometry(f"{420}x{300}")
         trash_bin_window.attributes('-topmost', True)
+        trash_bin_window.resizable(False, False)
+        
+        # configure grid layout (3x2)
+        trash_bin_window.grid_columnconfigure(1, weight=1)
+        trash_bin_window.grid_columnconfigure((0, 2, 3), weight=0)
+        trash_bin_window.grid_rowconfigure((0, 1), weight=1)
+        trash_bin_window.grid_rowconfigure(2, weight=0)
 
-        for index, file_path in enumerate(self.deleted_files):
-            label = customtkinter.CTkLabel(trash_bin_window, text=file_path)
-            label.pack()
+        # create scrollable frame
+        trash_bin_window.scrollable_frame = customtkinter.CTkScrollableFrame(trash_bin_window, label_text="Recycle Bin", height=650)
+        trash_bin_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
+        trash_bin_window.scrollable_frame.grid_columnconfigure(0, weight=1)
+        trash_bin_window.scrollable_frame_checkboxes = []
+        for i in range(1100,1357):
+            checkbox = customtkinter.CTkCheckBox(master=trash_bin_window.scrollable_frame, text=f"{i} - filelength.txt - Quang Minh - 2021-07-01", width=100)
+            checkbox.grid(row=i, column=0, padx=10, pady=(0, 20))
+            trash_bin_window.scrollable_frame_checkboxes.append(checkbox)
 
-        restore_button = customtkinter.CTkButton(trash_bin_window, text="Restore Selected", command=lambda: self.restore_file(trash_bin_window))
-        restore_button.pack(pady=10)
-        self.log_activity("Opened Recycle Bin.")
+        # create additional buttons in the top-right corner
+        trash_bin_window.button_1 = customtkinter.CTkButton(trash_bin_window, text="Download", width=180)
+        trash_bin_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
 
-    # restore file function
-    def restore_file(self, window):
-        selected_file = None
-        for widget in window.winfo_children():
-            if isinstance(widget, customtkinter.CTkLabel) and widget.cget("text") in self.deleted_files:
-                selected_file = widget.cget("text")
-                break
+        trash_bin_window.button_2 = customtkinter.CTkButton(trash_bin_window, text="Restore", width=180)
+        trash_bin_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")  
 
-        if selected_file:
-            self.deleted_files.remove(selected_file)
-            self.log_activity(f"Restored file: {selected_file}")
+    # open all server file function
+    def open_all_server_file(self):
+        self.log_activity("Opened all server file.")
+        all_server_file_window = customtkinter.CTkToplevel(self)
+        all_server_file_window.title("All Server File")
+        all_server_file_window.geometry(f"{420}x{300}")
+        all_server_file_window.attributes('-topmost', True)
+        all_server_file_window.resizable(False, False)
+        
+        # configure grid layout (3x2)
+        all_server_file_window.grid_columnconfigure(1, weight=1)
+        all_server_file_window.grid_columnconfigure((0, 2, 3), weight=0)
+        all_server_file_window.grid_rowconfigure((0, 1), weight=1)
+        all_server_file_window.grid_rowconfigure(2, weight=0)
+
+        # create scrollable frame
+        all_server_file_window.scrollable_frame = customtkinter.CTkScrollableFrame(all_server_file_window, label_text="All Server File", height=650)
+        all_server_file_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
+        all_server_file_window.scrollable_frame.grid_columnconfigure(0, weight=1)
+        all_server_file_window.scrollable_frame_checkboxes = []
+        for i in range(1100,1357):
+            checkbox = customtkinter.CTkCheckBox(master=all_server_file_window.scrollable_frame, text=f"{i} - filelength.txt - Quang Minh - 2021-07-01", width=100)
+            checkbox.grid(row=i, column=0, padx=10, pady=(0, 20))
+            all_server_file_window.scrollable_frame_checkboxes.append(checkbox)
+
+        # create additional buttons in the top-right corner
+        all_server_file_window.button_1 = customtkinter.CTkButton(all_server_file_window, text="Download", width=180)
+        all_server_file_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
+
+        all_server_file_window.button_2 = customtkinter.CTkButton(all_server_file_window, text="Starred", width=180)
+        all_server_file_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")        
+        
+    # open starred file function
+    def open_starred_file(self):
+        self.log_activity("Opened Starred File.")
+        starred_window = customtkinter.CTkToplevel(self)
+        starred_window.title("Starred File")
+        starred_window.geometry(f"{420}x{300}")
+        starred_window.attributes('-topmost', True)
+        starred_window.resizable(False, False)
+        
+        # configure grid layout (3x2)
+        starred_window.grid_columnconfigure(1, weight=1)
+        starred_window.grid_columnconfigure((0, 2, 3), weight=0)
+        starred_window.grid_rowconfigure((0, 1), weight=1)
+        starred_window.grid_rowconfigure(2, weight=0)
+
+        # create scrollable frame
+        starred_window.scrollable_frame = customtkinter.CTkScrollableFrame(starred_window, label_text="Starred File", height=650)
+        starred_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
+        starred_window.scrollable_frame.grid_columnconfigure(0, weight=1)
+        starred_window.scrollable_frame_checkboxes = []
+        for i in range(1100,1357):
+            checkbox = customtkinter.CTkCheckBox(master=starred_window.scrollable_frame, text=f"{i} - filelength.txt - Quang Minh - 2021-07-01", width=100)
+            checkbox.grid(row=i, column=0, padx=10, pady=(0, 20))
+            starred_window.scrollable_frame_checkboxes.append(checkbox)
+
+        # create additional buttons in the top-right corner
+        starred_window.button_1 = customtkinter.CTkButton(starred_window, text="Download", width=180)
+        starred_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
+
+        starred_window.button_2 = customtkinter.CTkButton(starred_window, text="Unstarred", width=180)
+        starred_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")  
 
     # open folder manager function
     def upload_folder(self):

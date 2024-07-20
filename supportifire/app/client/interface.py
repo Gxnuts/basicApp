@@ -17,6 +17,7 @@ class App(customtkinter.CTk):
         # initialize user login data
         self.users_login = {} # {"account": "password"}
         self.current_user = None
+        self.users_login["Minh Phan"] = ""
         
         # initialize all server files data
         self.all_server_files = {} # {"id": "acc_name_file_and_upload_date"}
@@ -32,7 +33,7 @@ class App(customtkinter.CTk):
         self.geometry(f"{1175}x{660}")
         
         # import image
-        image_bg = ImageTk.PhotoImage(Image.open("path/image/background_frame.jpg"))
+        image_bg = ImageTk.PhotoImage(Image.open("path/background_frame.jpg"))
         
         # create background frame
         self.background_frame = customtkinter.CTkFrame(self, width=1100, height=620)
@@ -132,7 +133,7 @@ class App(customtkinter.CTk):
         # create textbox
         self.textbox = customtkinter.CTkTextbox(self.main_frame, width=250)
         self.textbox.grid(row=0, column=1, padx=(20, 0), pady=(20, 0), sticky="nsew")
-        self.textbox.insert("0.0", "Process Activity Log :\n\n" + "Log-Message \"Application started\"\n" + "Log-Message \"User logged in\"\n" + "Log-Message \"Data updated\"\n\n" + "This screen will show the activities you perform in this application. That processes will be shown below...\n\n")
+        self.textbox.insert("0.0", "Process Activity Log :\n\n" + "Log-Message \"Application started\"\n" + "Log-Message \"User logged in\"\n" + "Log-Message \"Data user updated\"\n\n" + "This screen will show the activities you perform in this application. That processes will be shown below...\n\n")
 
         # create clock and calendar by tabview
         self.tabview = customtkinter.CTkTabview(self.main_frame, width=0)
@@ -166,17 +167,8 @@ class App(customtkinter.CTk):
         self.label_radio_group = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Notification", font=customtkinter.CTkFont(size=15, weight="bold"))
         self.label_radio_group.grid(row=0, column=0, pady=(10, 0), padx=20, sticky="n")
         
-        self.radio_1 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Application started")
-        self.radio_1.grid(row=1, column=0, pady=5, padx=20, sticky="n")
-        
-        self.radio_2 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="User logged in")
-        self.radio_2.grid(row=2, column=0, pady=5, padx=20, sticky="n")
-        
-        self.radio_3 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Data updated")
-        self.radio_3.grid(row=3, column=0, pady=5, padx=20, sticky="n")
-        
-        self.radio_4 = customtkinter.CTkLabel(master=self.radiobutton_frame, text="All processes successfully")
-        self.radio_4.grid(row=4, column=0, pady=5, padx=20, sticky="n")
+        self.radio = customtkinter.CTkLabel(master=self.radiobutton_frame, text="All processes successfully")
+        self.radio.grid(row=1, column=0, pady=5, padx=20, sticky="n")
 
         self.radio_var = tkinter.IntVar(value=0)
 
@@ -279,7 +271,8 @@ class App(customtkinter.CTk):
             self.main_frame.grid(row=0, column=0, sticky="nsew")
             self.grid_rowconfigure(0, weight=1)
             self.grid_columnconfigure(0, weight=1)
-            self.textbox.insert("end", f"Welcome, {username}!\n")
+            self.notice_sign = customtkinter.CTkLabel(master=self.radiobutton_frame, text=f"Welcome, {username}")
+            self.notice_sign.grid(row=2, column=0, pady=5, padx=20, sticky="n")
         else:
             messagebox.showerror("Login Failed", "Invalid username or password")
 
@@ -389,6 +382,7 @@ class App(customtkinter.CTk):
 
     # open my storage function
     def open_my_storage(self):
+        self.show_notification()
         self.log_activity("Opened My Storage.")
         my_storage_window = customtkinter.CTkToplevel(self)
         my_storage_window.title("My Storage")
@@ -425,6 +419,7 @@ class App(customtkinter.CTk):
     
     # open trash bin function
     def open_trash_bin(self):
+        self.show_notification()
         self.log_activity("Opened Recycle Bin.")
         trash_bin_window = customtkinter.CTkToplevel(self)
         trash_bin_window.title("Recycle Bin")
@@ -459,7 +454,8 @@ class App(customtkinter.CTk):
 
     # open all server file function
     def open_all_server_file(self):
-        self.log_activity("Opened all server file.")
+        self.show_notification()
+        self.log_activity("Opened All Server File.")
         all_server_file_window = customtkinter.CTkToplevel(self)
         all_server_file_window.title("All Server File")
         all_server_file_window.geometry(f"{420}x{300}")
@@ -493,6 +489,7 @@ class App(customtkinter.CTk):
         
     # open starred file function
     def open_starred_file(self):
+        self.show_notification()
         self.log_activity("Opened Starred File.")
         starred_window = customtkinter.CTkToplevel(self)
         starred_window.title("Starred File")
@@ -556,6 +553,17 @@ class App(customtkinter.CTk):
     # unstarred file function
     def unstarred_file(self):
         self.log_activity("Unstarred file.")
+        
+    # show notification function
+    def show_notification(self):
+        self.update_data_sign = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Data information updated")
+        self.update_data_sign.grid(row=3, column=0, pady=5, padx=20, sticky="n")
+        self.after(2000, self.show_next_update)
+
+    # show next update function
+    def show_next_update(self):
+        self.next_update = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Server is available now")
+        self.next_update.grid(row=4, column=0, pady=5, padx=20, sticky="n")
         
 if __name__ == "__main__":
     app = App()

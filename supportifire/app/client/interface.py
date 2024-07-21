@@ -46,7 +46,7 @@ class App(customtkinter.CTk):
         # configure window
         self.title("Box Storage")
         self.geometry(f"{1175}x{660}")
-        self.iconbitmap("/Users/admin/Desktop/Node/python_project/client/image/icon_logo.ico") 
+        self.iconbitmap("path/client/image/icon_logo.ico") 
         
         # import image
         image_bg = ImageTk.PhotoImage(Image.open("path/client/image/background_frame.jpg"))

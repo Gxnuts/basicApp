@@ -2,13 +2,29 @@ import tkinter
 import tkinter.messagebox
 import customtkinter
 from tkinter import filedialog, messagebox
+from tkcalendar import Calendar
+from tkinter import ttk
 from PIL import ImageTk, Image
-import os
+import sys
 import time
+import os
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 customtkinter.set_widget_scaling(1.0)  # Set UI scaling to 100% by default
+
+# separate id and name function
+def sep_id_and_name(id_name):
+    get_id = id_name[:4]
+    get_name = id_name[7:]
+    return get_id, get_name
+
+# get file extension function
+def get_file_extension(file_info):
+    parts = file_info.split(' - ')
+    filename = parts[2]
+    extension = filename.split('.')[-1]
+    return extension
 
 class App(customtkinter.CTk):
     def __init__(self):
@@ -17,7 +33,6 @@ class App(customtkinter.CTk):
         # initialize user login data
         self.users_login = {} # {"account": "password"}
         self.current_user = None
-        self.users_login["Minh Phan"] = ""
         
         # initialize all server files data
         self.all_server_files = {} # {"id": "acc_name_file_and_upload_date"}
@@ -29,11 +44,15 @@ class App(customtkinter.CTk):
         self.deleted_files = {} # {"id": "acc_name_file_and_upload_date"}
 
         # configure window
-        self.title("CloudBox")
+        self.title("Box Storage")
         self.geometry(f"{1175}x{660}")
+        self.iconbitmap("/Users/admin/Desktop/Node/python_project/client/image/icon_logo.ico") 
         
         # import image
-        image_bg = ImageTk.PhotoImage(Image.open("path/background_frame.jpg"))
+        image_bg = ImageTk.PhotoImage(Image.open("path/client/image/background_frame.jpg"))
+        logo_image = Image.open(path/client/image/logo.png")
+        logo_image = logo_image.resize((140, 81))
+        image_logo = ImageTk.PhotoImage(logo_image)
         
         # create background frame
         self.background_frame = customtkinter.CTkFrame(self, width=1100, height=620)
@@ -110,6 +129,9 @@ class App(customtkinter.CTk):
 
         self.language_button = customtkinter.CTkButton(self.sidebar_frame, text="English", command=self.change_language_event)
         self.language_button.grid(row=4, column=0, padx=20, pady=(10, 0))
+        
+        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color="Gainsboro", command=self.show_setting_window)
+        self.logo_button.grid(row=5, column=0, padx=20, pady=10)
 
         self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
         self.appearance_mode_label.grid(row=6, column=0, padx=20, pady=(10, 10))
@@ -144,18 +166,18 @@ class App(customtkinter.CTk):
         self.tabview.tab("Time by dates").grid_columnconfigure(0, weight=1)
 
         # create labels to notify time by hours and time by dates
-        self.label_tab_1 = customtkinter.CTkButton(self.tabview.tab("Time by hours"), text="Hours : Minutes")
+        self.label_tab_1 = customtkinter.CTkButton(self.tabview.tab("Time by hours"), text="Hours : Minutes", command=self.show_calendar)
         self.label_tab_1.grid(row=2, column=0, padx=20, pady=(20, 20))
-        self.label_tab_2 = customtkinter.CTkButton(self.tabview.tab("Time by dates"), text="Dates - Months")
+        self.label_tab_2 = customtkinter.CTkButton(self.tabview.tab("Time by dates"), text="Dates - Months", command=self.show_calendar)
         self.label_tab_2.grid(row=2, column=0, padx=20, pady=(20, 20))
         
         # create real-time digital clock
-        self.clock_label = customtkinter.CTkLabel(self.tabview.tab("Time by hours"), text="", font=("Arial", 60))
+        self.clock_label = customtkinter.CTkLabel(self.tabview.tab("Time by hours"), text="", font=("Arial", 55))
         self.clock_label.grid(row=3, column=0, padx=20, pady=20)
         self.update_clock()
         
         # create real-time digital calendar
-        self.date_label = customtkinter.CTkLabel(self.tabview.tab("Time by dates"), text="", font=("Arial", 60))
+        self.date_label = customtkinter.CTkLabel(self.tabview.tab("Time by dates"), text="", font=("Arial", 55))
         self.date_label.grid(row=3, column=0, padx=20, pady=20)
         self.update_date_month()
 
@@ -211,19 +233,33 @@ class App(customtkinter.CTk):
             "How to change language?",
             "How to restore a file?",
             "How to change appearance mode?",
-            "How to starred a file?"
+            "How to starred a file?",
+            "How to unstarred a file?",
+            "How to delete a file?",
+            "How to change hours to dates?",
+            "How to open the calendar?",
+            "How to find our product code?",
+            "How to change password?",
+            "How to log out?"
         ]
 
         self.faq_answers = {
             "How to upload a file?": "To upload a file, click on the 'Upload' button in the sidebar and select the file you want to upload.",
-            "How to download a file?": "To download a file, click on the 'Download' button in the sidebar and select the file you want to download.",
-            "How to delete a file?": "To delete a file, select the file and click on the 'Delete' button. The file will be moved to the recycle bin.",
+            "How to download a file?": "To download a file, click on the 'Download' button in 'All Server File', 'Starred File' or 'My Storage' after select the file you want to download.",
+            "How to remove a file?": "To remove a file, select the file and click on the 'Remove' button in 'My Storage'. The file will be moved to the recycle bin.",
             "How to search by file URL?": "To search by file URL, enter the URL in the search box and click the 'Search' button.",
             "How to change scaling?": "To change the UI scaling, select the desired scaling from the 'UI Scaling' dropdown in the sidebar.",
             "How to change language?": "To change the language, click on the 'Language' button in the sidebar. This will toggle between English and Vietnamese.",            
-            "How to restore a file?": "To restore a file from the recycle bin, click on the 'Recycle Bin' button in the sidebar, select the file, and click 'Restore'.",
+            "How to restore a file?": "To restore a file from the recycle bin, click on the 'Recycle Bin' button in the sidebar, select file, and click 'Restore'.",
             "How to change appearance mode?": "To change the appearance mode, select the desired mode from the 'Appearance Mode' dropdown in the sidebar.",
-            "How to starred a file?": "To starred a file, click on the 'Starred File' button in the sidebar. This will mark the file as starred."
+            "How to starred a file?": "To starred a file, click on the 'All Server File' button. This will mark file as starred.",
+            "How to unstarred a file?": "To unstarred a file, click on the 'Starred File' button in the sidebar, select file, and click 'Unstarred'.",
+            "How to delete a file?": "To delete a file, click on the 'Delete' button in the recycle bin, select file, and click 'Delete'.",
+            "How to change hours to dates?": "To change hours to dates, click on the 'Time by dates' tab in the main frame.",
+            "How to open the calendar?": "To open the calendar, click on the 'Hours - Minutes' or 'Dates - Months' label in the 'Time by dates' tab.",
+            "How to find our product code?": "To find our product code, click on the 'Box', then click to our qr code to see our product.",
+            "How to change password?": "To change password, click on the 'Box', then click on the 'Change Password' button",
+            "How to log out?": "To log out, click on the 'Box', then click on the 'Log Out' button"
         }
 
         for question in self.faq_questions:
@@ -273,6 +309,7 @@ class App(customtkinter.CTk):
             self.grid_columnconfigure(0, weight=1)
             self.notice_sign = customtkinter.CTkLabel(master=self.radiobutton_frame, text=f"Welcome, {username}")
             self.notice_sign.grid(row=2, column=0, pady=5, padx=20, sticky="n")
+            self.after(2000, self.show_notification)
         else:
             messagebox.showerror("Login Failed", "Invalid username or password")
 
@@ -319,6 +356,26 @@ class App(customtkinter.CTk):
         vietnam_dates = time.strftime('%d-%m')
         self.date_label.configure(text=vietnam_dates)
         self.after(86400000, self.update_date_month)
+        
+    # show callendar
+    def show_calendar(self):
+        self.log_activity("Opened Calendar.")
+        calendar_window = customtkinter.CTkToplevel(self)
+        calendar_window.title("Calendar")
+        calendar_window.geometry(f"{550}x{400}")
+        calendar_window.attributes('-topmost', True)
+        calendar_window.resizable(False, False)
+        
+        calendar_window_frame = customtkinter.CTkFrame(calendar_window)
+        calendar_window_frame.pack(fill="both", padx=10, pady=10, expand=True)
+        
+        calendar_window_style = ttk.Style(calendar_window)
+        calendar_window_style.theme_use("default")
+ 
+        cal = Calendar(calendar_window_frame, selectmode='day', locale='en_US', disabledforeground='red',
+                    cursor="hand2", background=customtkinter.ThemeManager.theme["CTkFrame"]["fg_color"][1],
+                    selectbackground=customtkinter.ThemeManager.theme["CTkButton"]["fg_color"][1])
+        cal.pack(fill="both", expand=True, padx=10, pady=10)       
         
     # create a function to show answer
     def show_answer(self, question):
@@ -382,7 +439,6 @@ class App(customtkinter.CTk):
 
     # open my storage function
     def open_my_storage(self):
-        self.show_notification()
         self.log_activity("Opened My Storage.")
         my_storage_window = customtkinter.CTkToplevel(self)
         my_storage_window.title("My Storage")
@@ -401,6 +457,7 @@ class App(customtkinter.CTk):
         my_storage_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
         my_storage_window.scrollable_frame.grid_columnconfigure(0, weight=1)
         my_storage_window.scrollable_frame_checkboxes = []
+        self.all_server_files = dict(sorted(self.all_server_files.items()))
         count_line = 0
         for id_ms, afd_ms in (self.all_server_files).items():
             a_ms = afd_ms.split(' - ')[0]
@@ -411,15 +468,14 @@ class App(customtkinter.CTk):
                 count_line += 1
 
         # create additional buttons in the top-right corner
-        my_storage_window.button_1 = customtkinter.CTkButton(my_storage_window, text="Remove", width=180, command=self.remove_file)
+        my_storage_window.button_1 = customtkinter.CTkButton(my_storage_window, text="Remove", width=180, command=lambda: self.remove_file(my_storage_window.scrollable_frame_checkboxes, my_storage_window))
         my_storage_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
 
-        my_storage_window.button_2 = customtkinter.CTkButton(my_storage_window, text="Download", width=180, command=self.download_file)
+        my_storage_window.button_2 = customtkinter.CTkButton(my_storage_window, text="Download", width=180, command=lambda: self.download_file(my_storage_window.scrollable_frame_checkboxes, my_storage_window))
         my_storage_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")
     
     # open trash bin function
     def open_trash_bin(self):
-        self.show_notification()
         self.log_activity("Opened Recycle Bin.")
         trash_bin_window = customtkinter.CTkToplevel(self)
         trash_bin_window.title("Recycle Bin")
@@ -438,6 +494,7 @@ class App(customtkinter.CTk):
         trash_bin_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
         trash_bin_window.scrollable_frame.grid_columnconfigure(0, weight=1)
         trash_bin_window.scrollable_frame_checkboxes = []
+        self.deleted_files = dict(sorted(self.deleted_files.items()))
         count_line = 0
         for id_rb, afd_rb in (self.deleted_files).items():
             checkbox = customtkinter.CTkCheckBox(master=trash_bin_window.scrollable_frame, text=f"{id_rb} - {afd_rb}", width=100)
@@ -446,15 +503,14 @@ class App(customtkinter.CTk):
             count_line += 1
 
         # create additional buttons in the top-right corner
-        trash_bin_window.button_1 = customtkinter.CTkButton(trash_bin_window, text="Restore", width=180, command=self.restore_file)
+        trash_bin_window.button_1 = customtkinter.CTkButton(trash_bin_window, text="Restore", width=180, command=lambda: self.restore_file(trash_bin_window.scrollable_frame_checkboxes, trash_bin_window))
         trash_bin_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
 
-        trash_bin_window.button_2 = customtkinter.CTkButton(trash_bin_window, text="Delete", width=180, command=self.delete_file)
+        trash_bin_window.button_2 = customtkinter.CTkButton(trash_bin_window, text="Delete", width=180, command=lambda: self.delete_file(trash_bin_window.scrollable_frame_checkboxes, trash_bin_window))
         trash_bin_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")  
 
     # open all server file function
     def open_all_server_file(self):
-        self.show_notification()
         self.log_activity("Opened All Server File.")
         all_server_file_window = customtkinter.CTkToplevel(self)
         all_server_file_window.title("All Server File")
@@ -473,6 +529,7 @@ class App(customtkinter.CTk):
         all_server_file_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
         all_server_file_window.scrollable_frame.grid_columnconfigure(0, weight=1)
         all_server_file_window.scrollable_frame_checkboxes = []
+        self.all_server_files = dict(sorted(self.all_server_files.items()))
         count_line = 0
         for id_asf, afd_asf in (self.all_server_files).items():
             checkbox = customtkinter.CTkCheckBox(master=all_server_file_window.scrollable_frame, text=f"{id_asf} - {afd_asf}", width=100)
@@ -481,15 +538,14 @@ class App(customtkinter.CTk):
             count_line += 1
 
         # create additional buttons in the top-right corner
-        all_server_file_window.button_1 = customtkinter.CTkButton(all_server_file_window, text="Download", width=180, command=self.download_file)
+        all_server_file_window.button_1 = customtkinter.CTkButton(all_server_file_window, text="Download", width=180, command=lambda: self.download_file(all_server_file_window.scrollable_frame_checkboxes, all_server_file_window))
         all_server_file_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
 
-        all_server_file_window.button_2 = customtkinter.CTkButton(all_server_file_window, text="Starred", width=180, command=self.starred_file)
+        all_server_file_window.button_2 = customtkinter.CTkButton(all_server_file_window, text="Starred", width=180, command=lambda: self.starred_file(all_server_file_window.scrollable_frame_checkboxes, all_server_file_window))
         all_server_file_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")        
         
     # open starred file function
     def open_starred_file(self):
-        self.show_notification()
         self.log_activity("Opened Starred File.")
         starred_window = customtkinter.CTkToplevel(self)
         starred_window.title("Starred File")
@@ -508,6 +564,7 @@ class App(customtkinter.CTk):
         starred_window.scrollable_frame.grid(row=1, column=0, columnspan=4, padx=(20, 20), pady=(20, 10), sticky="nsew")
         starred_window.scrollable_frame.grid_columnconfigure(0, weight=1)
         starred_window.scrollable_frame_checkboxes = []
+        self.starred_files = dict(sorted(self.starred_files.items()))
         count_line = 0
         for id_sf, afd_sf in (self.starred_files).items():
             checkbox = customtkinter.CTkCheckBox(master=starred_window.scrollable_frame, text=f"{id_sf} - {afd_sf}", width=100)
@@ -516,43 +573,94 @@ class App(customtkinter.CTk):
             count_line += 1
 
         # create additional buttons in the top-right corner
-        starred_window.button_1 = customtkinter.CTkButton(starred_window, text="Download", width=180, command=self.download_file)
+        starred_window.button_1 = customtkinter.CTkButton(starred_window, text="Download", width=180, command=lambda: self.download_file(starred_window.scrollable_frame_checkboxes, starred_window))
         starred_window.button_1.grid(row=2, column=1, padx=(10, 10), pady=(20, 10), sticky="ne")
 
-        starred_window.button_2 = customtkinter.CTkButton(starred_window, text="Unstarred", width=180, command=self.unstarred_file)
+        starred_window.button_2 = customtkinter.CTkButton(starred_window, text="Unstarred", width=180, command=lambda: self.unstarred_file(starred_window.scrollable_frame_checkboxes, starred_window))
         starred_window.button_2.grid(row=2, column=2, padx=(10, 20), pady=(20, 10), sticky="ne")  
-
-    # open folder manager function
-    def upload_folder(self):
-        folder_path = filedialog.askdirectory()
-        if folder_path:
-            self.log_activity(f"Uploaded folder: {folder_path}")
-            self.open_folder_manager(folder_path)
-        self.log_activity("Opened folder manager.")
         
     # remove file function
-    def remove_file(self):
-        self.log_activity("Removed file.")
+    def remove_file(self, checkboxes, window):
+        checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
+        if checked_items:
+            self.log_activity(f"Remove all the following file into the recycle bin: \n{'\n'.join(checked_items)}")
+            for item in checked_items:
+                id_item, name_item = sep_id_and_name(item)
+                self.deleted_files[id_item] = name_item
+                del self.all_server_files[id_item]
+                if id_item in self.starred_files:
+                    del self.starred_files[id_item]
+                # thực hiện các bước trên ở trên máy chủ nữa
+            tkinter.messagebox.showinfo("Remove File", "All ticked file have been removed successfully")
+            window.destroy()
+        else:
+            tkinter.messagebox.showwarning("Remove File", "Please select file to remove")
         
     # download file function
-    def download_file(self):
-        self.log_activity("Downloaded file.")
+    def download_file(self, checkboxes, window):
+        checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
+        if checked_items:
+            self.log_activity(f"All the following file have been downloaded: \n{'\n'.join(checked_items)}")
+            # download file có tên checked_items từ máy chủ
+            tkinter.messagebox.showinfo("Download File", "All ticked file have been downloaded successfully")
+            window.destroy()
+        else:
+            tkinter.messagebox.showwarning("Download File", "Please select file to download")
         
     # restore file function
-    def restore_file(self):
-        self.log_activity("Restored file.")
+    def restore_file(self, checkboxes, window):
+        checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
+        if checked_items:
+            self.log_activity(f"Restored all the following file into the server file: \n{'\n'.join(checked_items)}")
+            for item in checked_items:
+                id_item, name_item = sep_id_and_name(item)
+                self.all_server_files[id_item] = name_item
+                del self.deleted_files[id_item]
+            # thêm trên máy chủ nữa
+            tkinter.messagebox.showinfo("Restore File", "All ticked file have been restored successfully")
+            window.destroy()
+        else:
+            tkinter.messagebox.showwarning("Restore File", "Please select file to restore")
         
     # delete file function
-    def delete_file(self):
-        tkinter.messagebox.showwarning("Delete File", "Deleted files cannot be recovered. Please consider carefully before deleting.")
+    def delete_file(self, checkboxes, window):
+        checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
+        if checked_items:
+            tkinter.messagebox.showwarning("Delete File", "File have been deleted can't be restored. So be sure before deleting the file?")
+            self.log_activity(f"All the following file have been deleted from the recycle bin: \n{'\n'.join(checked_items)}")
+            # xóa file có tên checked_items trên máy chủ (ở thư mục recycle bin)
+            tkinter.messagebox.showinfo("Delete File", "All ticked file have been deleted successfully")
+            window.destroy()
+        else:
+            tkinter.messagebox.showwarning("Delete File", "Please select file to delete")
         
     # starred file function
-    def starred_file(self):
-        self.log_activity("Starred file.")
+    def starred_file(self, checkboxes, window):
+        checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
+        if checked_items:
+            self.log_activity(f"All the following file have been starred: \n{'\n'.join(checked_items)}")
+            for item in checked_items:
+                id_item, name_item = sep_id_and_name(item)
+                self.starred_files[id_item] = name_item
+            # thêm trên máy chủ nữa
+            tkinter.messagebox.showinfo("Starred File", "All ticked file have been starred successfully")
+            window.destroy()
+        else:
+            tkinter.messagebox.showwarning("Starred File", "Please select file to star")
         
     # unstarred file function
-    def unstarred_file(self):
-        self.log_activity("Unstarred file.")
+    def unstarred_file(self, checkboxes, window):
+        checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
+        if checked_items:
+            self.log_activity(f"All the following file have been unstarred from the starred file: \n{'\n'.join(checked_items)}")
+            for item in checked_items:
+                id_item, name_item = sep_id_and_name(item)
+                del self.starred_files[id_item]
+            # xóa trên máy chủ nữa
+            tkinter.messagebox.showinfo("Unstarred File", "All ticked file have been unstarred successfully")
+            window.destroy()
+        else:
+            tkinter.messagebox.showwarning("Unstarred File", "Please select file to unstar")
         
     # show notification function
     def show_notification(self):
@@ -564,6 +672,53 @@ class App(customtkinter.CTk):
     def show_next_update(self):
         self.next_update = customtkinter.CTkLabel(master=self.radiobutton_frame, text="Server is available now")
         self.next_update.grid(row=4, column=0, pady=5, padx=20, sticky="n")
+        
+    # show setting window function
+    def show_setting_window(self):
+        self.log_activity("Opened Setting.")
+        setting_window = customtkinter.CTkToplevel(self)
+        setting_window.title("Setting")
+        setting_window.geometry(f"{225}x{150}")
+        setting_window.attributes('-topmost', True)
+        setting_window.resizable(False, False)
+        
+        setting_window.button_1 = customtkinter.CTkButton(setting_window, text="Our QR", width=180, command=self.our_qr)
+        setting_window.button_1.grid(row=1, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
+        
+        setting_window.button_2 = customtkinter.CTkButton(setting_window, text="Change Password", width=180, command=self.change_password)
+        setting_window.button_2.grid(row=2, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
+        
+        setting_window.button_3 = customtkinter.CTkButton(setting_window, text="Log Out", width=180, command=self.log_out)
+        setting_window.button_3.grid(row=3, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
+
+    # connect to github function
+    def our_qr(self):
+        self.log_activity("Opened Our QR.")
+        our_qr_window = customtkinter.CTkToplevel(self)
+        our_qr_window.title("QR")
+        our_qr_window.geometry(f"{200}x{200}")
+        our_qr_window.attributes('-topmost', True)
+        our_qr_window.resizable(False, False)
+                
+        qr_image = Image.open("path/client/image/qr_code.png")
+        qr_image = qr_image.resize((245, 245))
+        qr_code = ImageTk.PhotoImage(qr_image)
+        
+        label_qr = customtkinter.CTkLabel(our_qr_window, image=qr_code, text="")
+        label_qr.pack(expand=True)
+        
+    # change password function
+    def change_password(self):
+        new_password = customtkinter.CTkInputDialog(text="Enter new password:", title="Change Password")
+        self.users_login[self.current_user] = new_password.get_input()
+        # thực hiện các bước trên máy chủ nữa
+        self.log_activity("Changed password.")
+        tkinter.messagebox.showinfo("Change Password", "Password changed successfully")
+               
+    # create a function to log out
+    def log_out(self):
+        python = sys.executable
+        os.execl(python, python, * sys.argv)
         
 if __name__ == "__main__":
     app = App()

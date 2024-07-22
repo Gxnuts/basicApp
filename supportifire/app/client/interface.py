@@ -5,7 +5,6 @@ from tkinter import filedialog, messagebox
 from tkcalendar import Calendar
 from tkinter import ttk
 from PIL import ImageTk, Image
-import pywinstyles
 import sys
 import time
 import os
@@ -48,10 +47,6 @@ class App(customtkinter.CTk):
         self.title("Box Storage")
         self.geometry(f"{1175}x{660}")
         self.iconbitmap("path/client/image/icon_logo.ico") 
-        
-        # warning : gpu heavy (can delete this two line)
-        pywinstyles.apply_style(self, "transparent")  # should open the window with a black background
-        pywinstyles.change_header_color(self, color="black")
         
         # import image
         image_bg = ImageTk.PhotoImage(Image.open("path/client/image/background_frame.jpg"))
@@ -135,13 +130,14 @@ class App(customtkinter.CTk):
         self.language_button = customtkinter.CTkButton(self.sidebar_frame, text="English", command=self.change_language_event)
         self.language_button.grid(row=4, column=0, padx=20, pady=(10, 0))
         
-        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color="#2B2B2B", command=self.show_setting_window)
+        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color="Gainsboro", command=self.show_setting_window)
         self.logo_button.grid(row=5, column=0, padx=20, pady=10)
-
+        
         self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
         self.appearance_mode_label.grid(row=6, column=0, padx=20, pady=(10, 10))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Dark", "Light", "System"],
+        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"],
                                                                        command=self.change_appearance_mode_event)
+    
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="UI Scaling:", anchor="w")
         self.scaling_label.grid(row=8, column=0, padx=20, pady=(10, 0))
@@ -306,7 +302,6 @@ class App(customtkinter.CTk):
         password = self.password_entry.get()
 
         if username in self.users_login and self.users_login[username] == password:
-            customtkinter.set_appearance_mode("Dark") 
             self.current_user = username
             self.login_frame.place_forget()
             self.background_frame.pack_forget()

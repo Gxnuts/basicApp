@@ -5,6 +5,7 @@ from tkinter import filedialog, messagebox
 from tkcalendar import Calendar
 from tkinter import ttk
 from PIL import ImageTk, Image
+import pywinstyles
 import sys
 import time
 import os
@@ -48,9 +49,13 @@ class App(customtkinter.CTk):
         self.geometry(f"{1175}x{660}")
         self.iconbitmap("path/client/image/icon_logo.ico") 
         
+        # warning : gpu heavy (can delete this two line)
+        pywinstyles.apply_style(self, "transparent")  # should open the window with a black background
+        pywinstyles.change_header_color(self, color="black")
+        
         # import image
         image_bg = ImageTk.PhotoImage(Image.open("path/client/image/background_frame.jpg"))
-        logo_image = Image.open(path/client/image/logo.png")
+        logo_image = Image.open("path/client/image/logo.png")
         logo_image = logo_image.resize((140, 81))
         image_logo = ImageTk.PhotoImage(logo_image)
         
@@ -130,12 +135,12 @@ class App(customtkinter.CTk):
         self.language_button = customtkinter.CTkButton(self.sidebar_frame, text="English", command=self.change_language_event)
         self.language_button.grid(row=4, column=0, padx=20, pady=(10, 0))
         
-        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color="Gainsboro", command=self.show_setting_window)
+        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color="#2B2B2B", command=self.show_setting_window)
         self.logo_button.grid(row=5, column=0, padx=20, pady=10)
 
         self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
         self.appearance_mode_label.grid(row=6, column=0, padx=20, pady=(10, 10))
-        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Light", "Dark", "System"],
+        self.appearance_mode_optionemenu = customtkinter.CTkOptionMenu(self.sidebar_frame, values=["Dark", "Light", "System"],
                                                                        command=self.change_appearance_mode_event)
         self.appearance_mode_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 10))
         self.scaling_label = customtkinter.CTkLabel(self.sidebar_frame, text="UI Scaling:", anchor="w")
@@ -258,8 +263,8 @@ class App(customtkinter.CTk):
             "How to change hours to dates?": "To change hours to dates, click on the 'Time by dates' tab in the main frame.",
             "How to open the calendar?": "To open the calendar, click on the 'Hours - Minutes' or 'Dates - Months' label in the 'Time by dates' tab.",
             "How to find our product code?": "To find our product code, click on the 'Box', then click to our qr code to see our product.",
-            "How to change password?": "To change password, click on the 'Box', then click on the 'Change Password' button",
-            "How to log out?": "To log out, click on the 'Box', then click on the 'Log Out' button"
+            "How to change password?": "To change password, click on the 'Box', then click on the 'Change Password' button.",
+            "How to log out?": "To log out, click on the 'Box', then click on the 'Log Out' button."
         }
 
         for question in self.faq_questions:
@@ -301,6 +306,7 @@ class App(customtkinter.CTk):
         password = self.password_entry.get()
 
         if username in self.users_login and self.users_login[username] == password:
+            customtkinter.set_appearance_mode("Dark") 
             self.current_user = username
             self.login_frame.place_forget()
             self.background_frame.pack_forget()
@@ -311,7 +317,7 @@ class App(customtkinter.CTk):
             self.notice_sign.grid(row=2, column=0, pady=5, padx=20, sticky="n")
             self.after(2000, self.show_notification)
         else:
-            messagebox.showerror("Login Failed", "Invalid username or password")
+            messagebox.showerror("Login Failed", "Invalid username or password.")
 
     # create a function to register
     def register(self):
@@ -320,12 +326,12 @@ class App(customtkinter.CTk):
         confirm_password = self.confirm_password_entry.get()
 
         if username in self.users_login:
-            messagebox.showerror("Registration Failed", "Username already exists")
+            messagebox.showerror("Registration Failed", "Username already exists.")
         elif password != confirm_password:
-            messagebox.showerror("Registration Failed", "Passwords do not match")
+            messagebox.showerror("Registration Failed", "Passwords do not match.")
         else:
             self.users_login[username] = password
-            messagebox.showinfo("Registration Successful", "Account created successfully")
+            messagebox.showinfo("Registration Successful", "Account created successfully.")
             self.show_login_frame()
 
     # create a function to log activities
@@ -591,10 +597,10 @@ class App(customtkinter.CTk):
                 if id_item in self.starred_files:
                     del self.starred_files[id_item]
                 # thực hiện các bước trên ở trên máy chủ nữa
-            tkinter.messagebox.showinfo("Remove File", "All ticked file have been removed successfully")
+            tkinter.messagebox.showinfo("Remove File", "All ticked file have been removed successfully.")
             window.destroy()
         else:
-            tkinter.messagebox.showwarning("Remove File", "Please select file to remove")
+            tkinter.messagebox.showwarning("Remove File", "Please select file to remove.")
         
     # download file function
     def download_file(self, checkboxes, window):
@@ -602,10 +608,10 @@ class App(customtkinter.CTk):
         if checked_items:
             self.log_activity(f"All the following file have been downloaded: \n{'\n'.join(checked_items)}")
             # download file có tên checked_items từ máy chủ
-            tkinter.messagebox.showinfo("Download File", "All ticked file have been downloaded successfully")
+            tkinter.messagebox.showinfo("Download File", "All ticked file have been downloaded successfully.")
             window.destroy()
         else:
-            tkinter.messagebox.showwarning("Download File", "Please select file to download")
+            tkinter.messagebox.showwarning("Download File", "Please select file to download.")
         
     # restore file function
     def restore_file(self, checkboxes, window):
@@ -617,22 +623,22 @@ class App(customtkinter.CTk):
                 self.all_server_files[id_item] = name_item
                 del self.deleted_files[id_item]
             # thêm trên máy chủ nữa
-            tkinter.messagebox.showinfo("Restore File", "All ticked file have been restored successfully")
+            tkinter.messagebox.showinfo("Restore File", "All ticked file have been restored successfully.")
             window.destroy()
         else:
-            tkinter.messagebox.showwarning("Restore File", "Please select file to restore")
+            tkinter.messagebox.showwarning("Restore File", "Please select file to restore.")
         
     # delete file function
     def delete_file(self, checkboxes, window):
         checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
         if checked_items:
-            tkinter.messagebox.showwarning("Delete File", "File have been deleted can't be restored. So be sure before deleting the file?")
+            tkinter.messagebox.showwarning("Delete File", "File have been deleted can't be restored. So be sure before deleting the file.")
             self.log_activity(f"All the following file have been deleted from the recycle bin: \n{'\n'.join(checked_items)}")
             # xóa file có tên checked_items trên máy chủ (ở thư mục recycle bin)
-            tkinter.messagebox.showinfo("Delete File", "All ticked file have been deleted successfully")
+            tkinter.messagebox.showinfo("Delete File", "All ticked file have been deleted successfully.")
             window.destroy()
         else:
-            tkinter.messagebox.showwarning("Delete File", "Please select file to delete")
+            tkinter.messagebox.showwarning("Delete File", "Please select file to delete.")
         
     # starred file function
     def starred_file(self, checkboxes, window):
@@ -643,10 +649,10 @@ class App(customtkinter.CTk):
                 id_item, name_item = sep_id_and_name(item)
                 self.starred_files[id_item] = name_item
             # thêm trên máy chủ nữa
-            tkinter.messagebox.showinfo("Starred File", "All ticked file have been starred successfully")
+            tkinter.messagebox.showinfo("Starred File", "All ticked file have been starred successfully.")
             window.destroy()
         else:
-            tkinter.messagebox.showwarning("Starred File", "Please select file to star")
+            tkinter.messagebox.showwarning("Starred File", "Please select file to star.")
         
     # unstarred file function
     def unstarred_file(self, checkboxes, window):
@@ -657,10 +663,10 @@ class App(customtkinter.CTk):
                 id_item, name_item = sep_id_and_name(item)
                 del self.starred_files[id_item]
             # xóa trên máy chủ nữa
-            tkinter.messagebox.showinfo("Unstarred File", "All ticked file have been unstarred successfully")
+            tkinter.messagebox.showinfo("Unstarred File", "All ticked file have been unstarred successfully.")
             window.destroy()
         else:
-            tkinter.messagebox.showwarning("Unstarred File", "Please select file to unstar")
+            tkinter.messagebox.showwarning("Unstarred File", "Please select file to unstar.")
         
     # show notification function
     def show_notification(self):
@@ -713,7 +719,7 @@ class App(customtkinter.CTk):
         self.users_login[self.current_user] = new_password.get_input()
         # thực hiện các bước trên máy chủ nữa
         self.log_activity("Changed password.")
-        tkinter.messagebox.showinfo("Change Password", "Password changed successfully")
+        tkinter.messagebox.showinfo("Change Password", "Password changed successfully.")
                
     # create a function to log out
     def log_out(self):

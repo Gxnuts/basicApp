@@ -137,7 +137,7 @@ class App(customtkinter.CTk):
         self.language_button = customtkinter.CTkButton(self.sidebar_frame, text="English", command=self.change_language_event)
         self.language_button.grid(row=4, column=0, padx=20, pady=(10, 0))
         
-        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color="Gainsboro", command=self.show_setting_window)
+        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color=["Gainsboro", "#2B2B2B"]", command=self.show_setting_window)
         self.logo_button.grid(row=5, column=0, padx=20, pady=10)
         
         self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")

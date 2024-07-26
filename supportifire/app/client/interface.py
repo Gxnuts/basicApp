@@ -2,12 +2,19 @@ import tkinter
 import tkinter.messagebox
 import customtkinter
 from tkinter import filedialog, messagebox
+from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkcalendar import Calendar
 from tkinter import ttk
 from PIL import ImageTk, Image
+import socket
 import sys
 import time
 import os
+
+SERVER_HOST = "127.0.0.1"
+SERVER_PORT = 5001
+BUFFER_SIZE = 4096
+SEPARATOR = "<SEPARATOR>"
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -36,7 +43,7 @@ class App(customtkinter.CTk):
         
         # initialize all server files data
         self.all_server_files = {} # {"id": "acc_name_file_and_upload_date"}
-        
+          
         # initialize starred files data
         self.starred_files = {} # {"id": "acc_name_file_and_upload_date"}
         
@@ -46,11 +53,11 @@ class App(customtkinter.CTk):
         # configure window
         self.title("Box Storage")
         self.geometry(f"{1175}x{660}")
-        self.iconbitmap("path/client/image/icon_logo.ico") 
+        self.iconbitmap("/Users/admin/Desktop/Node/python_project/client/image/icon_logo.ico") 
         
         # import image
-        image_bg = ImageTk.PhotoImage(Image.open("path/client/image/background_frame.jpg"))
-        logo_image = Image.open("path/client/image/logo.png")
+        image_bg = ImageTk.PhotoImage(Image.open("/Users/admin/Desktop/Node/python_project/client/image/background_frame.jpg"))
+        logo_image = Image.open("/Users/admin/Desktop/Node/python_project/client/image/logo.png")
         logo_image = logo_image.resize((140, 81))
         image_logo = ImageTk.PhotoImage(logo_image)
         
@@ -423,20 +430,54 @@ class App(customtkinter.CTk):
             self.entry.configure(placeholder_text="Enter URL of File")
             self.main_button_1.configure(text="Search")
             self.log_activity("Switched to English.")
+            
+    def upload_to_server(self, file_path):
+        if not file_path:
+            raise ValueError("File path must not be null or empty")
+        
+        filesize = os.path.getsize(file_path)
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            client_socket.connect((SERVER_HOST, SERVER_PORT))
+        except ConnectionRefusedError:
+            self.log_activity(f"Connection to {SERVER_HOST}:{SERVER_PORT} refused. Make sure the server is running.")
+            return
+        
+        try:
+            client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
+        except ConnectionResetError:
+            self.log_activity("Connection to server was reset. Make sure the server is running.")
+            return
+        
+        with open(file_path, "rb") as f:
+            while True:
+                bytes_read = f.read(BUFFER_SIZE)
+                if not bytes_read:
+                    break
+                try:
+                    client_socket.sendall(bytes_read)
+                except ConnectionResetError:
+                    self.log_activity("Connection to server was reset. Make sure the server is running.")
+                    return
+                
+        client_socket.close()
+        self.log_activity(f"File {file_path} uploaded successfully.")
 
     # upload file functions
     def upload_file(self):
         file_path = filedialog.askopenfilename()
         if file_path:
-            self.log_activity(f"Uploaded file: {file_path}")
+            self.upload_to_server(file_path)
+        else:
+            self.log_activity("No file selected to upload.")
                 
     # upload file by path
     def upload_file_by_path(self):
         file_path = self.entry.get()
         if os.path.isfile(file_path):
-            self.log_activity(f"Uploaded file: {file_path}")
+            self.upload_to_server(file_path)
         else:
-            self.log_activity("Invalid file path")
+            self.log_activity("Invalid file path.")
 
     # open my storage function
     def open_my_storage(self):
@@ -701,7 +742,7 @@ class App(customtkinter.CTk):
         our_qr_window.attributes('-topmost', True)
         our_qr_window.resizable(False, False)
                 
-        qr_image = Image.open("path/client/image/qr_code.png")
+        qr_image = Image.open("/Users/admin/Desktop/Node/python_project/client/image/qr_code.png")
         qr_image = qr_image.resize((245, 245))
         qr_code = ImageTk.PhotoImage(qr_image)
         

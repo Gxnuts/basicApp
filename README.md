@@ -62,4 +62,5 @@ Our documentation about this project can be found here:
 - Python
 
 <br>
+
 **Author: Quang Minh, Hoang Tung, Thanh Dat**

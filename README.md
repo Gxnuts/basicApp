@@ -3,9 +3,10 @@
 This project is about an application that helps users to upload and download files from our server.
 **Supported on all computer platforms.** 
 Hope you enjoy it!
-<br><br>Our application called by "Box Storage" and you can get an overview of its interface below.
+<br><br>
+Our application called by "Box Storage" and you can get an overview of its interface below.
 
-## Preview
+## Overview
 
 Overview of the interface we have two parts including the login/registration section and the main interface of the application.
 
@@ -60,6 +61,5 @@ Our documentation about this project can be found here:
 ## Language
 - Python
 
+<br>
 **Author: Quang Minh, Hoang Tung, Thanh Dat**
-
-**Thanks for reading!**

@@ -137,7 +137,7 @@ class App(customtkinter.CTk):
         self.language_button = customtkinter.CTkButton(self.sidebar_frame, text="English", command=self.change_language_event)
         self.language_button.grid(row=4, column=0, padx=20, pady=(10, 0))
         
-        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color=["Gainsboro", "#2B2B2B"]", command=self.show_setting_window)
+        self.logo_button = customtkinter.CTkButton(self.sidebar_frame, image=image_logo, text="", fg_color="transparent", hover_color=["Gainsboro", "#2B2B2B"], command=self.show_setting_window)
         self.logo_button.grid(row=5, column=0, padx=20, pady=10)
         
         self.appearance_mode_label = customtkinter.CTkLabel(self.sidebar_frame, text="Appearance Mode:", anchor="w")
@@ -720,41 +720,44 @@ class App(customtkinter.CTk):
         self.log_activity("Opened Setting.")
         setting_window = customtkinter.CTkToplevel(self)
         setting_window.title("Setting")
-        setting_window.geometry(f"{225}x{150}")
+        setting_window.geometry(f"{338}x{150}")
         setting_window.attributes('-topmost', True)
         setting_window.resizable(False, False)
         
-        setting_window.button_1 = customtkinter.CTkButton(setting_window, text="Our QR", width=180, command=self.our_qr)
+        setting_window.button_1 = customtkinter.CTkButton(setting_window, text="Our QR", width=300, command=lambda: self.our_qr(setting_window))
         setting_window.button_1.grid(row=1, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
         
-        setting_window.button_2 = customtkinter.CTkButton(setting_window, text="Change Password", width=180, command=self.change_password)
+        setting_window.button_2 = customtkinter.CTkButton(setting_window, text="Change Password", width=300, command=lambda: self.change_password(setting_window))
         setting_window.button_2.grid(row=2, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
         
-        setting_window.button_3 = customtkinter.CTkButton(setting_window, text="Log Out", width=180, command=self.log_out)
+        setting_window.button_3 = customtkinter.CTkButton(setting_window, text="Log Out", width=300, command=lambda: self.log_out(setting_window))
         setting_window.button_3.grid(row=3, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
 
     # connect to github function
-    def our_qr(self):
+    def our_qr(self, setting_window):
+        setting_window.destroy()
         self.log_activity("Opened Our QR.")
         our_qr_window = customtkinter.CTkToplevel(self)
         our_qr_window.title("QR")
-        our_qr_window.geometry(f"{200}x{200}")
+        our_qr_window.geometry(f"{205}x{205}")
         our_qr_window.attributes('-topmost', True)
         our_qr_window.resizable(False, False)
                 
         qr_image = Image.open("/Users/admin/Desktop/Node/python_project/client/image/qr_code.png")
-        qr_image = qr_image.resize((245, 245))
+        qr_image = qr_image.resize((250, 250))
         qr_code = ImageTk.PhotoImage(qr_image)
         
         label_qr = customtkinter.CTkLabel(our_qr_window, image=qr_code, text="")
         label_qr.pack(expand=True)
         
+        
     # change password function
-    def change_password(self):
+    def change_password(self, setting_window):
+        setting_window.destroy()
+        self.log_activity("Opened Change Password.")
         new_password = customtkinter.CTkInputDialog(text="Enter new password:", title="Change Password")
         self.users_login[self.current_user] = new_password.get_input()
         # thực hiện các bước trên máy chủ nữa
-        self.log_activity("Changed password.")
         tkinter.messagebox.showinfo("Change Password", "Password changed successfully.")
                
     # create a function to log out

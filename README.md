@@ -1,5 +1,4 @@
-
-## DOWNLOAD / UPLOAD FILE APPLICATION USING MULTI-THREADING TECHNIQUE
+# DOWNLOAD / UPLOAD FILE APPLICATION USING MULTI-THREADING TECHNIQUE
 
 This project is about an application that helps users to upload and download files from our server.
 **Supported on all computer platforms.** 

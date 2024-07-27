@@ -51,9 +51,11 @@ pip install socket
 ## Documentation
 
 The **official** documentation about **custom tkinter** can be found here:
+<br>
 **➡️ https://customtkinter.tomschimansky.com/documentation**.
 
 Our documentation about this project can be found here:
+<br>
 **➡️ ...**.
 
 ## Language

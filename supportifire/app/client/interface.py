@@ -33,6 +33,19 @@ def get_file_extension(file_info):
     extension = filename.split('.')[-1]
     return extension
 
+# read from server message to dictionary function
+def import_data_from_server(key_from_server, value_from_server):
+    key_and_value = ["", ""]
+    index = 0
+    for i in key_from_server:
+        if (i == ':') or (i == '|'):
+            if i == '|':
+                value_from_server[key_and_value[0]] = key_and_value[1]
+                key_and_value = ["", ""]
+            index = 1 - index
+        else:
+            key_and_value[index] += i
+
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
@@ -41,14 +54,38 @@ class App(customtkinter.CTk):
         self.users_login = {} # {"account": "password"}
         self.current_user = None
         
+        # message from server user and password
+        message_from_server_uap = "Minh Phan:1|user2:2|user3:3|"
+                
+        # import user login data
+        import_data_from_server(message_from_server_uap, self.users_login)
+        
         # initialize all server files data
         self.all_server_files = {} # {"id": "acc_name_file_and_upload_date"}
+        
+        # message from server all server files
+        message_from_server_asf = "0001:Minh Phan - example1.txt - 2021-09-01|0002:Minh Phan - example2.txt - 2021-09-02|0003:Minh Phan - example3.txt - 2021-09-03|0004:Minh Phan - example4.txt - 2021-09-04|0005:Minh Phan - example5.txt - 2021-09-05|0006:Minh Quang - example6.txt - 2021-09-06|"
           
+        # import all server files data
+        import_data_from_server(message_from_server_asf, self.all_server_files)
+        
         # initialize starred files data
         self.starred_files = {} # {"id": "acc_name_file_and_upload_date"}
         
+        # message from server starred files
+        message_from_server_sf = "0001:Minh Phan - example1.txt - 2021-09-01|0002:Minh Phan - example2.txt - 2021-09-02|0003:Minh Phan - example3.txt - 2021-09-03|"
+        
+        # import starred files data
+        import_data_from_server(message_from_server_sf, self.starred_files)
+        
         # initialize deleted files data
         self.deleted_files = {} # {"id": "acc_name_file_and_upload_date"}
+        
+        # message from server deleted files
+        message_from_server_df = "0004:Minh Phan - example4.txt - 2021-09-04|0005:Minh Phan - example5.txt - 2021-09-05|0006:Minh Quang - example6.txt - 2021-09-06|"
+        
+        # import deleted files data
+        import_data_from_server(message_from_server_df, self.deleted_files)
 
         # configure window
         self.title("Box Storage")
@@ -440,7 +477,7 @@ class App(customtkinter.CTk):
         try:
             client_socket.connect((SERVER_HOST, SERVER_PORT))
         except ConnectionRefusedError:
-            self.log_activity(f"Connection to {SERVER_HOST}:{SERVER_PORT} refused. Make sure the server is running.")
+            self.log_activity(f"Connection to server refused. Make sure the server is running.")
             return
         
         try:
@@ -637,6 +674,31 @@ class App(customtkinter.CTk):
             window.destroy()
         else:
             tkinter.messagebox.showwarning("Remove File", "Please select file to remove.")
+            
+    # download from server
+    def download_from_server(self, file_path, filesize):
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            client_socket.connect((SERVER_HOST, SERVER_PORT))
+        except ConnectionRefusedError:
+            self.log_activity(f"Connection to server refused. Make sure the server is running.")
+            return
+        
+        try:
+            client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
+        except ConnectionResetError:
+            self.log_activity("Connection to server was reset. Make sure the server is running.")
+            return
+        
+        with open(file_path, "wb") as f:
+            while True:
+                bytes_read = client_socket.recv(BUFFER_SIZE)
+                if not bytes_read:
+                    break
+                f.write(bytes_read)
+                
+        client_socket.close()
+        self.log_activity(f"File {file_path} downloaded successfully.")
         
     # download file function
     def download_file(self, checkboxes, window):
@@ -730,7 +792,7 @@ class App(customtkinter.CTk):
         setting_window.button_2 = customtkinter.CTkButton(setting_window, text="Change Password", width=300, command=lambda: self.change_password(setting_window))
         setting_window.button_2.grid(row=2, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
         
-        setting_window.button_3 = customtkinter.CTkButton(setting_window, text="Log Out", width=300, command=lambda: self.log_out(setting_window))
+        setting_window.button_3 = customtkinter.CTkButton(setting_window, text="Log Out", width=300, command=self.log_out)
         setting_window.button_3.grid(row=3, column=0, padx=(20, 20), pady=(10, 10), sticky="n")
 
     # connect to github function

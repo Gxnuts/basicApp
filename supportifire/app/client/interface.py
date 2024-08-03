@@ -11,8 +11,8 @@ import sys
 import time
 import os
 
-SERVER_HOST = "127.0.0.1"
-SERVER_PORT = 5001
+SERVER_HOST = "172.16.2.11"
+SERVER_PORT = 12345
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
 
@@ -32,6 +32,23 @@ def get_file_extension(file_info):
     filename = parts[2]
     extension = filename.split('.')[-1]
     return extension
+
+# take signal from server function
+def take_signal(signal):
+    # create a socket and connect to the server
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_socket.connect((SERVER_HOST, SERVER_PORT))
+    
+    # send signal to the server
+    client_socket.sendall(signal.encode())
+    
+    # receive data from the server
+    data = client_socket.recv(1024).decode()
+    
+    # close the connection
+    client_socket.close()
+    
+    return data
 
 # read from server message to dictionary function
 def import_data_from_server(key_from_server, value_from_server):
@@ -55,8 +72,8 @@ class App(customtkinter.CTk):
         self.current_user = None
         
         # message from server user and password
-        message_from_server_uap = "Minh Phan:1|user2:2|user3:3|"
-                
+        message_from_server_uap = take_signal("user")
+       
         # import user login data
         import_data_from_server(message_from_server_uap, self.users_login)
         
@@ -64,7 +81,7 @@ class App(customtkinter.CTk):
         self.all_server_files = {} # {"id": "acc_name_file_and_upload_date"}
         
         # message from server all server files
-        message_from_server_asf = "0001:Minh Phan - example1.txt - 2021-09-01|0002:Minh Phan - example2.txt - 2021-09-02|0003:Minh Phan - example3.txt - 2021-09-03|0004:Minh Phan - example4.txt - 2021-09-04|0005:Minh Phan - example5.txt - 2021-09-05|0006:Minh Quang - example6.txt - 2021-09-06|"
+        message_from_server_asf = take_signal("asf")
           
         # import all server files data
         import_data_from_server(message_from_server_asf, self.all_server_files)
@@ -72,21 +89,9 @@ class App(customtkinter.CTk):
         # initialize starred files data
         self.starred_files = {} # {"id": "acc_name_file_and_upload_date"}
         
-        # message from server starred files
-        message_from_server_sf = "0001:Minh Phan - example1.txt - 2021-09-01|0002:Minh Phan - example2.txt - 2021-09-02|0003:Minh Phan - example3.txt - 2021-09-03|"
-        
-        # import starred files data
-        import_data_from_server(message_from_server_sf, self.starred_files)
-        
         # initialize deleted files data
         self.deleted_files = {} # {"id": "acc_name_file_and_upload_date"}
         
-        # message from server deleted files
-        message_from_server_df = "0004:Minh Phan - example4.txt - 2021-09-04|0005:Minh Phan - example5.txt - 2021-09-05|0006:Minh Quang - example6.txt - 2021-09-06|"
-        
-        # import deleted files data
-        import_data_from_server(message_from_server_df, self.deleted_files)
-
         # configure window
         self.title("Box Storage")
         self.geometry(f"{1175}x{660}")
@@ -145,6 +150,7 @@ class App(customtkinter.CTk):
 
         self.back_to_login_button = customtkinter.CTkButton(self.register_frame, text="Back to Login", command=self.show_login_frame, fg_color="SlateBlue", hover_color="MediumSlateBlue")
         self.back_to_login_button.grid(row=4, column=1, padx=20, pady=10)
+        
 
         # create main frame for file manager
         self.main_frame = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -355,6 +361,18 @@ class App(customtkinter.CTk):
             self.notice_sign = customtkinter.CTkLabel(master=self.radiobutton_frame, text=f"Welcome, {username}")
             self.notice_sign.grid(row=2, column=0, pady=5, padx=20, sticky="n")
             self.after(2000, self.show_notification)
+            
+            # message from server starred files
+            message_from_server_sf = take_signal(self.current_user + "|sf")
+            
+            # import starred files data
+            import_data_from_server(message_from_server_sf, self.starred_files)
+            
+            # message from server deleted files
+            message_from_server_df = take_signal(self.current_user + "|rb")
+            
+            # import deleted files data
+            import_data_from_server(message_from_server_df, self.deleted_files)
         else:
             messagebox.showerror("Login Failed", "Invalid username or password.")
 
@@ -468,6 +486,7 @@ class App(customtkinter.CTk):
             self.main_button_1.configure(text="Search")
             self.log_activity("Switched to English.")
             
+    # upload file to server function
     def upload_to_server(self, file_path):
         if not file_path:
             raise ValueError("File path must not be null or empty")

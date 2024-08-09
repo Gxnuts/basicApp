@@ -3,12 +3,20 @@ import os
 import threading
 import csv
 import shutil
+import datetime
 
 SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 5001
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
 UPLOAD_FOLDER = "uploads"
+PATH = "PATH"
+
+# All file path
+file_path_all_files = PATH + 'mmt_project-main/server/data_users/all_file.csv'
+file_path_recycle_bin = PATH + 'mmt_project-main/server/data_users/recycle_bin.csv'
+file_path_starred_files = PATH + 'mmt_project-main/server/data_users/starred_file.csv'
+file_path_users_login = PATH + 'mmt_project-main/server/data_users/users_login.csv'
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -138,7 +146,7 @@ def remove_row_by_id(file_path, id_to_remove):
             if row[0] != id_to_remove:
                 rows.append(row)
     
-    # Ghi lại file CSV với các thay đổi
+    # Change csv file with new info
     with open(file_path, mode='w', newline='', encoding='utf-8') as file:
         csv_writer = csv.writer(file)
         csv_writer.writerows(rows)
@@ -156,7 +164,25 @@ def add_info_to_user(file_path, target_user, new_id, new_account_info):
                 row.extend([new_id, new_account_info])
             rows.append(row)
     
-    # Ghi lại file CSV với các thay đổi
+    # Change csv file with new info
+    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+        csv_writer = csv.writer(file)
+        csv_writer.writerows(rows)
+        
+# Change password of user
+def change_password(file_path, user_name, new_password):
+    rows = []
+    with open(file_path, mode='r', newline='', encoding='utf-8') as file:
+        csv_reader = csv.reader(file)
+        headers = next(csv_reader)
+        rows.append(headers)
+
+        for row in csv_reader:
+            if row[0] == user_name:
+                row[1] = new_password
+            rows.append(row)
+    
+    # Change csv file with new info
     with open(file_path, mode='w', newline='', encoding='utf-8') as file:
         csv_writer = csv.writer(file)
         csv_writer.writerows(rows)
@@ -168,9 +194,8 @@ def move_file(source_file, destination_folder):
     print(f"File '{source_file}' đã được chuyển đến '{destination_folder}'")
 
 # Handle client function
-def handle_client(client_socket):
+def handle_client(client_socket, received):
     try:
-        received = client_socket.recv(BUFFER_SIZE).decode()
         filename, filesize = received.split(SEPARATOR)
         filename = os.path.basename(filename)
         filesize = int(filesize)
@@ -186,33 +211,36 @@ def handle_client(client_socket):
     finally:
         client_socket.close()
 
+# Upload file to client
+def upload_to_client(client_host, file_path):
+    if not file_path:
+        raise ValueError("File path must not be null or empty")
+    
+    filesize = os.path.getsize(file_path)
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client_socket.connect((client_host, SERVER_PORT))
+    except ConnectionRefusedError:
+        return
+            
+    try:
+        client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
+    except ConnectionResetError:
+        return
+    
+    with open(file_path, "rb") as f:
+        while True:
+            bytes_read = f.read(BUFFER_SIZE)
+            if not bytes_read:
+                break
+            try:
+                client_socket.sendall(bytes_read)
+            except ConnectionResetError:
+                return
+            
+    client_socket.close()
+
 def start_server():
-    # All file paths
-    file_path_all_files = '/Users/admin/Desktop/Node/python_project/server/data_users/all_file.csv'
-    file_path_recycle_bin = '/Users/admin/Desktop/Node/python_project/server/data_users/recycle_bin.csv'
-    file_path_starred_files = '/Users/admin/Desktop/Node/python_project/server/data_users/starred_file.csv'
-    file_path_users_login = '/Users/admin/Desktop/Node/python_project/server/data_users/users_login.csv'
-    
-    # Convert csv users login files to string
-    csv_users_login = csv_to_string(file_path_users_login)
-    
-    # Send users login string to client
-    
-    # Get user login info from client
-    user_now = "user1"
-    
-    # Get all files string
-    csv_all_files = csv_to_string(file_path_all_files)
-    
-    # Get recycle bin string and starred files string
-    csv_recycle_bin = extract_user_info(file_path_recycle_bin, user_now)
-    csv_starred_files = extract_user_info(file_path_starred_files, user_now)
-    
-    # Send all files string, recycle bin string and starred files string to client
-    
-    
-    # Start server
-    
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((SERVER_HOST, SERVER_PORT))
     server_socket.listen(5)
@@ -221,8 +249,85 @@ def start_server():
     while True:
         client_socket, address = server_socket.accept()
         print(f"[+] {address} is connected.")
-        client_handler = threading.Thread(target=handle_client, args=(client_socket,))
-        client_handler.start()
+
+        signal = client_socket.recv(4096).decode()
+        print(f"Received signal: {signal}")
+        
+        data = "None"
+        if signal == "user": # Get all user login
+            data = csv_to_string(file_path_users_login)
+        elif signal == "asf": # Get all server files
+            data = csv_to_string(file_path_all_files)
+        elif signal[-3:] == "|sf": # Get all starred files by user
+            name_user = signal[:-3]
+            data = extract_user_info(file_path_starred_files, name_user)
+            if data == "":
+                data = "None"
+        elif signal[-3:] == "|rb": # Get all recycle bin by user
+            name_user = signal[:-3]
+            data = extract_user_info(file_path_recycle_bin, name_user)
+            if data == "":
+                data = "None"
+        elif signal[-3:] == "|uu": # Add new user
+            user_and_pass = signal[:-3]
+            new_user = user_and_pass.split("|")[0]
+            new_pass = user_and_pass.split("|")[1]
+            add_new_row(file_path_users_login, new_user, new_pass)
+            add_new_user(file_path_starred_files, new_user)
+            add_new_user(file_path_recycle_bin, new_user)
+        elif signal[-3:] == "|rm": # Remove file
+            user_and_id = signal[:-3]
+            user_info = user_and_id.split("|")[1]
+            id_to_remove = user_and_id.split("|")[0]
+            name_user = user_info.split("-")[0]
+            name_user = name_user[:-1]
+            remove_id_from_starred(file_path_starred_files, id_to_remove)
+            remove_row_by_id(file_path_all_files, id_to_remove)
+            add_info_to_user(file_path_recycle_bin, name_user, id_to_remove, user_info)
+        elif signal[-3:] == "|rs": # Restore file
+            user_and_id = signal[:-3]
+            user_info = user_and_id.split("|")[1]
+            id_to_restore = user_and_id.split("|")[0]
+            name_user = user_info.split("-")[0]
+            name_user = name_user[:-1]
+            del_one_id_in_one_row(file_path_recycle_bin, name_user, id_to_restore)
+            add_new_row(file_path_all_files, id_to_restore, user_info)
+        elif signal[-3:] == "|df": # Delete file
+            user_and_id = signal[:-3]
+            user_info = user_and_id.split("|")[1]
+            id_to_delete = user_and_id.split("|")[0]
+            name_user = user_info.split("-")[0]
+            name_user = name_user[:-1]
+            del_one_id_in_one_row(file_path_recycle_bin, name_user, id_to_delete)
+            os.remove(f"{PATH}mmt_project-main/server/data_files/all_file/{id_to_delete}")
+        elif signal[-3:] == "|sf": # Starred file
+            user_and_info = signal[:-3]
+            info = user_and_info.split("|")[1]
+            user = user_and_info.split("|")[0]
+            id_user = info.split("-")[0]
+            id_user = id_user[:-1]
+            another_info = info[7:]
+            add_info_to_user(file_path_starred_files, user, id_user, another_info)
+        elif signal[-3:] == "|uf": # Unstarred file
+            user_and_info = signal[:-3]
+            info = user_and_info.split("|")[1]
+            user = user_and_info.split("|")[0]
+            id_user = info.split("-")[0]
+            id_user = id_user[:-1]
+            del_one_id_in_one_row(file_path_starred_files, user, id_user)
+        elif signal[-3:] == "|cp": # Change password
+            user_and_pass = signal[:-3]
+            user = user_and_info.split("|")[0]
+            password = user_and_info.split("|")[1]
+            change_password(file_path_users_login, user, password)
+        elif signal[-3:] == "|dl": # Download
+            signal = signal[:-3]
+            upload_to_client(address[0], PATH + "mmt_project-main/server/uploads/" + signal)
+        else: # Upload
+            client_handler = threading.Thread(target=handle_client, args=(client_socket, signal))
+            client_handler.start()
+            
+        client_socket.sendall(data.encode())
 
 if __name__ == "__main__":
     start_server()

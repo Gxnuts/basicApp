@@ -6,24 +6,27 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkcalendar import Calendar
 from tkinter import ttk
 from PIL import ImageTk, Image
+import threading
 import socket
 import sys
 import time
 import os
 
-SERVER_HOST = "172.16.2.11"
-SERVER_PORT = 12345
+SERVER_HOST = "10.124.7.177"
+SERVER_PORT = 5001
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
+PATH = "PATH"
+DOWNLOAD_FOLDER = "downloads"
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 customtkinter.set_widget_scaling(1.0)  # Set UI scaling to 100% by default
 
 # separate id and name function
-def sep_id_and_name(id_name):
-    get_id = id_name[:4]
-    get_name = id_name[7:]
+def sep_id_and_info(id_info):
+    get_id = id_info[:4]
+    get_name = id_info[7:]
     return get_id, get_name
 
 # get file extension function
@@ -38,17 +41,35 @@ def take_signal(signal):
     # create a socket and connect to the server
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_HOST, SERVER_PORT))
-    
+
     # send signal to the server
     client_socket.sendall(signal.encode())
-    
+
     # receive data from the server
-    data = client_socket.recv(1024).decode()
+    data = client_socket.recv(4096).decode()
     
     # close the connection
     client_socket.close()
     
     return data
+
+# handle signal to server function
+def handle_client(client_socket, received):
+    try:
+        filename, filesize = received.split(SEPARATOR)
+        filename = os.path.basename(filename)
+        filesize = int(filesize)
+        
+        filepath = os.path.join(DOWNLOAD_FOLDER, filename)
+        with open(filepath, "wb") as f:
+            while True:
+                bytes_read = client_socket.recv(BUFFER_SIZE)
+                if not bytes_read:    
+                    break
+                f.write(bytes_read)
+        print(f"File {filename} received successfully")
+    finally:
+        client_socket.close()
 
 # read from server message to dictionary function
 def import_data_from_server(key_from_server, value_from_server):
@@ -95,11 +116,11 @@ class App(customtkinter.CTk):
         # configure window
         self.title("Box Storage")
         self.geometry(f"{1175}x{660}")
-        self.iconbitmap("/Users/admin/Desktop/Node/python_project/client/image/icon_logo.ico") 
+        self.iconbitmap(PATH + "mmt_project/client/image/icon_logo.ico") 
         
         # import image
-        image_bg = ImageTk.PhotoImage(Image.open("/Users/admin/Desktop/Node/python_project/client/image/background_frame.jpg"))
-        logo_image = Image.open("/Users/admin/Desktop/Node/python_project/client/image/logo.png")
+        image_bg = ImageTk.PhotoImage(Image.open(PATH + "mmt_project/client/image/background_frame.jpg"))
+        logo_image = Image.open(PATH + "mmt_project/client/image/logo.png")
         logo_image = logo_image.resize((140, 81))
         image_logo = ImageTk.PhotoImage(logo_image)
         
@@ -364,15 +385,17 @@ class App(customtkinter.CTk):
             
             # message from server starred files
             message_from_server_sf = take_signal(self.current_user + "|sf")
-            
+                        
             # import starred files data
-            import_data_from_server(message_from_server_sf, self.starred_files)
+            if message_from_server_sf != "none":
+                import_data_from_server(message_from_server_sf, self.starred_files)
             
             # message from server deleted files
             message_from_server_df = take_signal(self.current_user + "|rb")
             
             # import deleted files data
-            import_data_from_server(message_from_server_df, self.deleted_files)
+            if message_from_server_df != "none":
+                import_data_from_server(message_from_server_df, self.deleted_files)
         else:
             messagebox.showerror("Login Failed", "Invalid username or password.")
 
@@ -386,9 +409,14 @@ class App(customtkinter.CTk):
             messagebox.showerror("Registration Failed", "Username already exists.")
         elif password != confirm_password:
             messagebox.showerror("Registration Failed", "Passwords do not match.")
+        elif len(username) == 0:
+            messagebox.showerror("Registration Failed", "Username cannot be empty.")
+        elif len(password) < 6:
+            messagebox.showerror("Registration Failed", "Password must be at least 6 characters.")
         else:
             self.users_login[username] = password
             messagebox.showinfo("Registration Successful", "Account created successfully.")
+            take_signal(username + '|' + password + "|uu")
             self.show_login_frame()
 
     # create a function to log activities
@@ -498,7 +526,7 @@ class App(customtkinter.CTk):
         except ConnectionRefusedError:
             self.log_activity(f"Connection to server refused. Make sure the server is running.")
             return
-        
+                        
         try:
             client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
         except ConnectionResetError:
@@ -683,12 +711,13 @@ class App(customtkinter.CTk):
         if checked_items:
             self.log_activity(f"Remove all the following file into the recycle bin: \n{'\n'.join(checked_items)}")
             for item in checked_items:
-                id_item, name_item = sep_id_and_name(item)
-                self.deleted_files[id_item] = name_item
+                id_item, info_item = sep_id_and_info(item)
+                self.deleted_files[id_item] = info_item
                 del self.all_server_files[id_item]
                 if id_item in self.starred_files:
                     del self.starred_files[id_item]
-                # thực hiện các bước trên ở trên máy chủ nữa
+                # do on server
+                take_signal(id_item + '|' + info_item + "|rm")
             tkinter.messagebox.showinfo("Remove File", "All ticked file have been removed successfully.")
             window.destroy()
         else:
@@ -723,8 +752,28 @@ class App(customtkinter.CTk):
     def download_file(self, checkboxes, window):
         checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
         if checked_items:
-            self.log_activity(f"All the following file have been downloaded: \n{'\n'.join(checked_items)}")
-            # download file có tên checked_items từ máy chủ
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.bind(("0.0.0.0", SERVER_PORT))
+            server_socket.listen(1)
+            
+            # download file from server
+            for item in checked_items:
+                # send signal to server
+                take_signal(item.split(" - ")[2] + "|dl")
+                client_socket, address = server_socket.accept()
+                
+                signal = client_socket.recv(BUFFER_SIZE).decode()
+                    
+                # receive file
+                client_handler = threading.Thread(target=handle_client, args=(client_socket, signal))
+                client_handler.start()         
+                   
+                # close client socket
+                client_socket.close()    
+                
+                self.log_activity(f"File {item} downloaded successfully.")
+                
+            server_socket.close()        
             tkinter.messagebox.showinfo("Download File", "All ticked file have been downloaded successfully.")
             window.destroy()
         else:
@@ -736,10 +785,11 @@ class App(customtkinter.CTk):
         if checked_items:
             self.log_activity(f"Restored all the following file into the server file: \n{'\n'.join(checked_items)}")
             for item in checked_items:
-                id_item, name_item = sep_id_and_name(item)
-                self.all_server_files[id_item] = name_item
+                id_item, info_item = sep_id_and_info(item)
+                self.all_server_files[id_item] = info_item
                 del self.deleted_files[id_item]
-            # thêm trên máy chủ nữa
+            # do on server
+            take_signal(id_item + '|' + info_item + "|rs")
             tkinter.messagebox.showinfo("Restore File", "All ticked file have been restored successfully.")
             window.destroy()
         else:
@@ -751,7 +801,11 @@ class App(customtkinter.CTk):
         if checked_items:
             tkinter.messagebox.showwarning("Delete File", "File have been deleted can't be restored. So be sure before deleting the file.")
             self.log_activity(f"All the following file have been deleted from the recycle bin: \n{'\n'.join(checked_items)}")
-            # xóa file có tên checked_items trên máy chủ (ở thư mục recycle bin)
+            for item in checked_items:
+                id_item, info_item = sep_id_and_info(item)
+                del self.deleted_files[id_item]
+                # do on server
+                take_signal(id_item + '|' + info_item + "|df")
             tkinter.messagebox.showinfo("Delete File", "All ticked file have been deleted successfully.")
             window.destroy()
         else:
@@ -763,9 +817,11 @@ class App(customtkinter.CTk):
         if checked_items:
             self.log_activity(f"All the following file have been starred: \n{'\n'.join(checked_items)}")
             for item in checked_items:
-                id_item, name_item = sep_id_and_name(item)
-                self.starred_files[id_item] = name_item
-            # thêm trên máy chủ nữa
+                id_item, info_item = sep_id_and_info(item)
+                if id_item not in self.starred_files:
+                    self.starred_files[id_item] = info_item
+                    # do on server
+                    take_signal(self.current_user + '|' + item + "|sf")
             tkinter.messagebox.showinfo("Starred File", "All ticked file have been starred successfully.")
             window.destroy()
         else:
@@ -777,9 +833,10 @@ class App(customtkinter.CTk):
         if checked_items:
             self.log_activity(f"All the following file have been unstarred from the starred file: \n{'\n'.join(checked_items)}")
             for item in checked_items:
-                id_item, name_item = sep_id_and_name(item)
+                id_item, info_item = sep_id_and_info(item)
                 del self.starred_files[id_item]
-            # xóa trên máy chủ nữa
+                # do on server
+                take_signal(self.current_user + '|' + item + "|uf")
             tkinter.messagebox.showinfo("Unstarred File", "All ticked file have been unstarred successfully.")
             window.destroy()
         else:
@@ -824,13 +881,12 @@ class App(customtkinter.CTk):
         our_qr_window.attributes('-topmost', True)
         our_qr_window.resizable(False, False)
                 
-        qr_image = Image.open("/Users/admin/Desktop/Node/python_project/client/image/qr_code.png")
+        qr_image = Image.open(PATH + "mmt_project/client/image/qr_code.png")
         qr_image = qr_image.resize((250, 250))
         qr_code = ImageTk.PhotoImage(qr_image)
         
         label_qr = customtkinter.CTkLabel(our_qr_window, image=qr_code, text="")
         label_qr.pack(expand=True)
-        
         
     # change password function
     def change_password(self, setting_window):
@@ -838,7 +894,8 @@ class App(customtkinter.CTk):
         self.log_activity("Opened Change Password.")
         new_password = customtkinter.CTkInputDialog(text="Enter new password:", title="Change Password")
         self.users_login[self.current_user] = new_password.get_input()
-        # thực hiện các bước trên máy chủ nữa
+        # do on server
+        take_signal(self.current_user + '|' + new_password.get_input() + "|cp")
         tkinter.messagebox.showinfo("Change Password", "Password changed successfully.")
                
     # create a function to log out

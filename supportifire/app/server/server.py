@@ -317,6 +317,8 @@ def start_server():
             name_user = user_info.split("-")[0]
             name_user = name_user[:-1]
             del_one_id_in_one_row(file_path_recycle_bin, name_user, id_to_delete)
+            id_to_delete = id_to_delete + "." + file_extension(id_to_delete + " - " + user_info)
+            os.remove(PATH + "mmt_project/server/uploads/" + id_to_delete)
         elif signal[-3:] == "|sf": # Starred file
             user_and_info = signal[:-3]
             info = user_and_info.split("|")[1]
@@ -334,13 +336,16 @@ def start_server():
             del_one_id_in_one_row(file_path_starred_files, user, id_user)
         elif signal[-3:] == "|cp": # Change password
             user_and_pass = signal[:-3]
-            user = user_and_info.split("|")[0]
-            password = user_and_info.split("|")[1]
+            user = user_and_pass.split("|")[0]
+            password = user_and_pass.split("|")[1]
             change_password(file_path_users_login, user, password)
         elif signal[-3:] == "|dl": # Download
             signal = signal[:-3]
-            
-            upload_to_client(address[0], PATH + "mmt_project/server/uploads/" + signal)
+            filepath = os.path.join(UPLOAD_FOLDER, signal)
+            with open(filepath, 'rb') as file:
+                data = file.read()
+                client_socket.sendall(data)
+            continue
         else: # Upload
             new_id = random.randint(1000, 9999)
             while check_id_existed(file_path_all_files, str(new_id)):

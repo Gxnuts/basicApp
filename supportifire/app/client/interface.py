@@ -23,6 +23,10 @@ customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
 customtkinter.set_widget_scaling(1.0)  # Set UI scaling to 100% by default
 
+# create a downloads folder if it does not exist
+if not os.path.exists(DOWNLOAD_FOLDER):
+    os.makedirs(DOWNLOAD_FOLDER)
+
 # separate id and name function
 def sep_id_and_info(id_info):
     get_id = id_info[:4]
@@ -52,24 +56,6 @@ def take_signal(signal):
     client_socket.close()
     
     return data
-
-# handle signal to server function
-def handle_client(client_socket, received):
-    try:
-        filename, filesize = received.split(SEPARATOR)
-        filename = os.path.basename(filename)
-        filesize = int(filesize)
-        
-        filepath = os.path.join(DOWNLOAD_FOLDER, filename)
-        with open(filepath, "wb") as f:
-            while True:
-                bytes_read = client_socket.recv(BUFFER_SIZE)
-                if not bytes_read:    
-                    break
-                f.write(bytes_read)
-        print(f"File {filename} received successfully")
-    finally:
-        client_socket.close()
 
 # read from server message to dictionary function
 def import_data_from_server(key_from_server, value_from_server):
@@ -725,60 +711,35 @@ class App(customtkinter.CTk):
             window.destroy()
         else:
             tkinter.messagebox.showwarning("Remove File", "Please select file to remove.")
-            
-    # download from server
-    def download_from_server(self, file_path, filesize):
-        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            client_socket.connect((SERVER_HOST, SERVER_PORT))
-        except ConnectionRefusedError:
-            self.log_activity(f"Connection to server refused. Make sure the server is running.")
-            return
-        
-        try:
-            client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
-        except ConnectionResetError:
-            self.log_activity("Connection to server was reset. Make sure the server is running.")
-            return
-        
-        with open(file_path, "wb") as f:
-            while True:
-                bytes_read = client_socket.recv(BUFFER_SIZE)
-                if not bytes_read:
-                    break
-                f.write(bytes_read)
-                
-        client_socket.close()
-        self.log_activity(f"File {file_path} downloaded successfully.")
         
     # download file function
     def download_file(self, checkboxes, window):
         checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
         if checked_items:
-            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.bind(("0.0.0.0", SERVER_PORT))
-            server_socket.listen(1)
-            
             # download file from server
             for item in checked_items:
                 # send signal to server
-                name_file = item.split(" - ")[1] + "." + get_file_extension(item.split(" - ")[1])
-                take_signal(name_file + "|dl")
+                name_file = item.split(" - ")[0] + "." + get_file_extension(item)
+                # create client socket
+                client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                client_socket.connect((SERVER_HOST, SERVER_PORT))
                 
-                client_socket, address = server_socket.accept()
+                # send name file to server
+                client_socket.sendall(f"{name_file}|dl".encode())    
                 
-                signal = client_socket.recv(BUFFER_SIZE).decode()
-                    
-                # receive file
-                client_handler = threading.Thread(target=handle_client, args=(client_socket, signal))
-                client_handler.start()         
+                # create download folder and download file from server
+                filepath = os.path.join(DOWNLOAD_FOLDER, item.split(" - ")[2])
+                with open(filepath, 'wb') as file:
+                    while True:
+                        data = client_socket.recv(BUFFER_SIZE)
+                        if not data:
+                            break
+                        file.write(data)
                    
                 # close client socket
                 client_socket.close()    
-                
                 self.log_activity(f"File {item} downloaded successfully.")
                 
-            server_socket.close()        
             tkinter.messagebox.showinfo("Download File", "All ticked file have been downloaded successfully.")
             window.destroy()
         else:
@@ -900,7 +861,7 @@ class App(customtkinter.CTk):
         new_password = customtkinter.CTkInputDialog(text="Enter new password:", title="Change Password")
         self.users_login[self.current_user] = new_password.get_input()
         # do on server
-        take_signal(self.current_user + '|' + new_password.get_input() + "|cp")
+        take_signal(self.current_user + '|' + self.users_login[self.current_user] + "|cp")
         tkinter.messagebox.showinfo("Change Password", "Password changed successfully.")
                
     # create a function to log out

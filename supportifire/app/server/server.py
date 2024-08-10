@@ -343,8 +343,14 @@ def start_server():
             signal = signal[:-3]
             filepath = os.path.join(UPLOAD_FOLDER, signal)
             with open(filepath, 'rb') as file:
-                data = file.read()
-                client_socket.sendall(data)
+                while True:
+                    bytes_read = file.read(BUFFER_SIZE)
+                    if not bytes_read:
+                        break
+                    try:
+                        client_socket.sendall(bytes_read)
+                    except ConnectionResetError:
+                        return
             continue
         else: # Upload
             new_id = random.randint(1000, 9999)

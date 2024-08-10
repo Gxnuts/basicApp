@@ -12,7 +12,7 @@ import sys
 import time
 import os
 
-SERVER_HOST = "10.124.7.177"
+SERVER_HOST = "192.168.1.18"
 SERVER_PORT = 5001
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
@@ -46,7 +46,7 @@ def take_signal(signal):
     client_socket.sendall(signal.encode())
 
     # receive data from the server
-    data = client_socket.recv(4096).decode()
+    data = client_socket.recv(BUFFER_SIZE).decode()
     
     # close the connection
     client_socket.close()
@@ -384,7 +384,7 @@ class App(customtkinter.CTk):
             self.after(2000, self.show_notification)
             
             # message from server starred files
-            message_from_server_sf = take_signal(self.current_user + "|sf")
+            message_from_server_sf = take_signal(self.current_user + "|ds")
                         
             # import starred files data
             if message_from_server_sf != "none":
@@ -526,9 +526,9 @@ class App(customtkinter.CTk):
         except ConnectionRefusedError:
             self.log_activity(f"Connection to server refused. Make sure the server is running.")
             return
-                        
+                    
         try:
-            client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
+            client_socket.send(f"{file_path}{SEPARATOR}{filesize}|{self.current_user}".encode())
         except ConnectionResetError:
             self.log_activity("Connection to server was reset. Make sure the server is running.")
             return
@@ -543,6 +543,9 @@ class App(customtkinter.CTk):
                 except ConnectionResetError:
                     self.log_activity("Connection to server was reset. Make sure the server is running.")
                     return
+                
+        data = client_socket.recv(BUFFER_SIZE).decode()
+        self.all_server_files[data] = f"{self.current_user} - {os.path.basename(file_path)} - {time.strftime('%d/%m/%Y')}"
                 
         client_socket.close()
         self.log_activity(f"File {file_path} uploaded successfully.")
@@ -759,7 +762,9 @@ class App(customtkinter.CTk):
             # download file from server
             for item in checked_items:
                 # send signal to server
-                take_signal(item.split(" - ")[2] + "|dl")
+                name_file = item.split(" - ")[1] + "." + get_file_extension(item.split(" - ")[1])
+                take_signal(name_file + "|dl")
+                
                 client_socket, address = server_socket.accept()
                 
                 signal = client_socket.recv(BUFFER_SIZE).decode()

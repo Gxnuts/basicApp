@@ -231,32 +231,52 @@ def handle_client(client_socket, received, new_id):
 
 # Upload file to client
 def upload_to_client(client_host, file_path):
-    if not file_path:
-        raise ValueError("File path must not be null or empty")
+    # Ensure the file path is valid and the file exists
+    if not file_path or not os.path.isfile(file_path):
+        raise ValueError("Invalid file path or file does not exist")
     
     filesize = os.path.getsize(file_path)
+    
+    # Ensure the file is not empty
+    if filesize == 0:
+        raise ValueError("File is empty and cannot be sent")
+
+    # Initialize the socket connection
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         client_socket.connect((client_host, SERVER_PORT))
-    except ConnectionRefusedError:
+    except ConnectionRefusedError as e:
+        print(f"Connection refused: {e}")
         return
-            
+
     try:
+        # Send the file metadata: file name and file size
         client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
-    except ConnectionResetError:
+    except ConnectionResetError as e:
+        print(f"Connection reset during metadata send: {e}")
         return
     
-    with open(file_path, "rb") as f:
-        while True:
-            bytes_read = f.read(BUFFER_SIZE)
-            if not bytes_read:
-                break
-            try:
-                client_socket.sendall(bytes_read)
-            except ConnectionResetError:
-                return
-            
-    client_socket.close()
+    try:
+        # Open the file and start sending data
+        with open(file_path, "rb") as f:
+            while True:
+                bytes_read = f.read(BUFFER_SIZE)
+                if not bytes_read:
+                    # Done reading the file
+                    break
+                try:
+                    client_socket.sendall(bytes_read)
+                except ConnectionResetError as e:
+                    print(f"Connection reset during file send: {e}")
+                    return
+    except FileNotFoundError as e:
+        print(f"File not found during sending: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        # Ensure the socket is always closed
+        client_socket.close()
+
 
 def start_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

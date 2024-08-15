@@ -70,6 +70,51 @@ def import_data_from_server(key_from_server, value_from_server):
         else:
             key_and_value[index] += i
 
+
+# test def
+# receive file
+def receive_file_from_server(server_host):
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        client_socket.connect((server_host, SERVER_PORT))
+    except ConnectionRefusedError as e:
+        print(f"Connection refused: {e}")
+        return
+
+    try:
+        # Receive the file metadata (filename and size)
+        received = client_socket.recv(BUFFER_SIZE).decode()
+        filename, filesize = received.split(SEPARATOR)
+        filename = os.path.basename(filename)
+        filesize = int(filesize)
+        
+        # Send ACK for metadata
+        client_socket.sendall("ACK".encode())
+
+        # Prepare to receive the file data
+        with open(filename, "wb") as f:
+            bytes_received = 0
+            while bytes_received < filesize:
+                bytes_read = client_socket.recv(BUFFER_SIZE)
+                if not bytes_read:
+                    break
+                # Check if we received the EOF marker
+                if bytes_read == b"EOF":
+                    print("Received EOF marker")
+                    break
+                # Write the received bytes to the file
+                f.write(bytes_read)
+                bytes_received += len(bytes_read)
+
+                # Send ACK for the received data chunk
+                client_socket.sendall("ACK".encode())
+
+        print(f"File {filename} received successfully.")
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        client_socket.close()
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()

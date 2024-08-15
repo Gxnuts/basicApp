@@ -10,8 +10,10 @@ SERVER_HOST = "0.0.0.0"
 SERVER_PORT = 5001
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
+ACK_TIMEOUT = 5
 UPLOAD_FOLDER = "mmt_project/server/uploads"
 PATH = "PATH"
+
 
 # All file path
 file_path_all_files = PATH + 'mmt_project/server/data_users/all_file.csv'
@@ -229,7 +231,22 @@ def handle_client(client_socket, received, new_id):
     finally:
         client_socket.close()
 
-# Upload file to client
+# Upload file to client 
+# RPT 3.0
+def send_with_ack(client_socket, data, retries=3):
+    """Send data and wait for an acknowledgment from the client."""
+    for attempt in range(retries):
+        try:
+            client_socket.sendall(data)
+            client_socket.settimeout(ACK_TIMEOUT)
+            ack = client_socket.recv(BUFFER_SIZE).decode()
+            if ack == "ACK":
+                return True
+        except (socket.timeout, ConnectionResetError) as e:
+            print(f"Attempt {attempt + 1} failed: {e}")
+            continue
+    return False
+
 def upload_to_client(client_host, file_path):
     # Ensure the file path is valid and the file exists
     if not file_path or not os.path.isfile(file_path):
@@ -251,12 +268,11 @@ def upload_to_client(client_host, file_path):
 
     try:
         # Send the file metadata: file name and file size
-        client_socket.send(f"{file_path}{SEPARATOR}{filesize}".encode())
-    except ConnectionResetError as e:
-        print(f"Connection reset during metadata send: {e}")
-        return
-    
-    try:
+        metadata = f"{file_path}{SEPARATOR}{filesize}".encode()
+        if not send_with_ack(client_socket, metadata):
+            print("Failed to send metadata after multiple attempts.")
+            return
+        
         # Open the file and start sending data
         with open(file_path, "rb") as f:
             while True:
@@ -264,11 +280,14 @@ def upload_to_client(client_host, file_path):
                 if not bytes_read:
                     # Done reading the file
                     break
-                try:
-                    client_socket.sendall(bytes_read)
-                except ConnectionResetError as e:
-                    print(f"Connection reset during file send: {e}")
+                if not send_with_ack(client_socket, bytes_read):
+                    print("Failed to send file data after multiple attempts.")
                     return
+        
+        # Final acknowledgment that the file has been fully sent
+        if not send_with_ack(client_socket, b"EOF"):
+            print("Failed to send EOF after multiple attempts.")
+        
     except FileNotFoundError as e:
         print(f"File not found during sending: {e}")
     except Exception as e:

@@ -44,7 +44,7 @@ The **official** documentation about **custom tkinter** can be found here:
 
 Our documentation about this project can be found here:
 <br>
-**➡️ ...**.
+**➡️ https://docs.google.com/document/d/15certMv15Q6KQRynZtnaRLDCOYP3UIL_dlV3L533GXo/edit**.
 
 ## Language
 - Python

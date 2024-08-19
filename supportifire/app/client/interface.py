@@ -6,18 +6,17 @@ from tkinterdnd2 import DND_FILES, TkinterDnD
 from tkcalendar import Calendar
 from tkinter import ttk
 from PIL import ImageTk, Image
-import threading
 import socket
 import sys
 import time
 import os
 
-SERVER_HOST = "192.168.1.18"
+SERVER_HOST = "192.168.1.13"
 SERVER_PORT = 5001
 BUFFER_SIZE = 4096
 SEPARATOR = "<SEPARATOR>"
-PATH = "PATH"
-DOWNLOAD_FOLDER = "downloads"
+PATH = "PATH" # Change this to the path of the project folder on your computer
+DOWNLOAD_FOLDER = "downloads-folder" # Folder to store downloaded files
 
 customtkinter.set_appearance_mode("System")  # Modes: "System" (standard), "Dark", "Light"
 customtkinter.set_default_color_theme("blue")  # Themes: "blue" (standard), "green", "dark-blue"
@@ -40,21 +39,16 @@ def get_file_extension(file_info):
     extension = filename.split('.')[-1]
     return extension
 
-# take signal from server function
+# take signal function
 def take_signal(signal):
-    # create a socket and connect to the server
+    # create the client socket
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_socket.connect((SERVER_HOST, SERVER_PORT))
-
-    # send signal to the server
+    
+    # send the signal to the server and receive the response
     client_socket.sendall(signal.encode())
-
-    # receive data from the server
     data = client_socket.recv(BUFFER_SIZE).decode()
-    
-    # close the connection
     client_socket.close()
-    
     return data
 
 # read from server message to dictionary function
@@ -70,51 +64,6 @@ def import_data_from_server(key_from_server, value_from_server):
         else:
             key_and_value[index] += i
 
-
-# test def
-# receive file
-def receive_file_from_server(server_host):
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    try:
-        client_socket.connect((server_host, SERVER_PORT))
-    except ConnectionRefusedError as e:
-        print(f"Connection refused: {e}")
-        return
-
-    try:
-        # Receive the file metadata (filename and size)
-        received = client_socket.recv(BUFFER_SIZE).decode()
-        filename, filesize = received.split(SEPARATOR)
-        filename = os.path.basename(filename)
-        filesize = int(filesize)
-        
-        # Send ACK for metadata
-        client_socket.sendall("ACK".encode())
-
-        # Prepare to receive the file data
-        with open(filename, "wb") as f:
-            bytes_received = 0
-            while bytes_received < filesize:
-                bytes_read = client_socket.recv(BUFFER_SIZE)
-                if not bytes_read:
-                    break
-                # Check if we received the EOF marker
-                if bytes_read == b"EOF":
-                    print("Received EOF marker")
-                    break
-                # Write the received bytes to the file
-                f.write(bytes_read)
-                bytes_received += len(bytes_read)
-
-                # Send ACK for the received data chunk
-                client_socket.sendall("ACK".encode())
-
-        print(f"File {filename} received successfully.")
-
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        client_socket.close()
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
@@ -761,17 +710,13 @@ class App(customtkinter.CTk):
     def download_file(self, checkboxes, window):
         checked_items = [cb.cget("text") for cb in checkboxes if cb.get()]
         if checked_items:
-            # download file from server
             for item in checked_items:
-                # send signal to server
+                # get file name and extension from item and connect to server
                 name_file = item.split(" - ")[0] + "." + get_file_extension(item)
-                # create client socket
                 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                client_socket.connect((SERVER_HOST, SERVER_PORT))
-                
-                # send name file to server
+                client_socket.connect((SERVER_HOST, SERVER_PORT))                
                 client_socket.sendall(f"{name_file}|dl".encode())    
-                
+                                
                 # create download folder and download file from server
                 filepath = os.path.join(DOWNLOAD_FOLDER, item.split(" - ")[2])
                 with open(filepath, 'wb') as file:
